@@ -6,32 +6,6 @@ NarcoticSense AI is a chemist-friendly platform for importing, visualizing, prep
 
 > Responsible use: this software is for research, screening, visualization, and decision support only. High-stakes findings must be confirmed using validated laboratory methods.
 
-## Author
-
-**Dr. Joy Karmakar**
-
-Founder and Principal Developer, **NarcoticSense AI**
-
-Founder, **DyeMind**
-
-🌐 https://www.dyemind.com
-
-ORCID:
-https://orcid.org/0000-0002-8232-5639
-
-GitHub:
-https://github.com/drjoykarmakar
-
-Research Interests
-
-- AI-assisted spectroscopy
-- Fluorescence spectroscopy
-- Raman spectroscopy
-- Chemometrics
-- Analytical chemistry
-- Molecular sensing
-- Intelligent sensor development
-
 ## Quick start on Mac
 
 1. Download or clone the repository.
@@ -66,12 +40,29 @@ python3 -m pytest
 
 
 
+New in v0.6.0:
+
+- Trustworthy AI tab for confidence, uncertainty, and unknown detection.
+- Cross-validated model comparison across available classifiers.
+- Confidence tables with probability margins.
+- Conformal prediction sets for uncertainty-aware classification.
+- Distance-based out-of-distribution / unknown-sample flags.
+- Automatic "refer to confirmatory testing" decision-support flag.
+- Spectral occlusion explainability for influential spectral regions.
+- Peak-level attribution connecting model explanations to detected peaks.
+- Expanded tests for uncertainty, explainability, OOD detection, and validation.
+
 New in v0.5.0:
 
-- Expanded chemometrics: PLS regression, LDA, SIMCA-style one-class PCA, HCA, and UMAP/PCA manifold mapping.
-- Validation tables for supervised ML: class probabilities, reliability/calibration, ROC, and precision-recall exports.
-- Distance matrix export for spectral similarity and outlier inspection.
-- Additional tests for chemometrics, regression, validation, and probability outputs.
+- AI Model Engine tab.
+- Classification models: Random Forest, Extra Trees, Gradient Boosting, Logistic Regression, SVM, and KNN.
+- Regression models: PLS Regression, Random Forest Regressor, Ridge Regression, and SVR.
+- Train/test split controls.
+- Classification metrics, regression metrics, predictions, probabilities, and confusion matrix outputs.
+- Feature importance for supported models.
+- Save trained models to the `models/` directory.
+- New `narcoticsense.models` package.
+- Expanded tests for model training, evaluation, and serialization.
 
 New in v0.3.0:
 
@@ -104,6 +95,7 @@ New in v0.2.0:
 - PCA, t-SNE, and K-means chemometrics.
 - Aligned spectral matrix export for future ML.
 - AI dataset planning tab.
+- Trustworthy AI: confidence, conformal prediction sets, OOD flags, model comparison, and spectral-region explanations.
 - Markdown research report generator.
 - FastAPI starter backend.
 - Tests, Docker files, and GitHub Actions CI.

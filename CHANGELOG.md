@@ -1,3 +1,17 @@
+# Changelog
+
+## v0.6.0 - Explainability, Uncertainty, and Robust Validation
+
+- Added Trustworthy AI tab.
+- Added cross-validated classifier comparison.
+- Added confidence and probability-margin tables.
+- Added conformal classification thresholds and prediction sets.
+- Added distance-based OOD/unknown-sample detection.
+- Added automatic refer-to-confirmatory-testing flags.
+- Added spectral occlusion explainability.
+- Added peak-level attribution mapping model explanations to detected peaks.
+- Added tests for uncertainty, explainability, and robust validation.
+
 
 ## v0.5.0 - Chemometrics and Validation Expansion
 

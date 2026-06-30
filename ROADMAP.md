@@ -51,3 +51,11 @@
 - Reproducible benchmark datasets.
 - Example publication workflow.
 - Responsible-use documentation.
+
+
+## Next: v0.7.0 - Molecular and Multimodal AI
+
+- RDKit optional integration for SMILES descriptors and fingerprints.
+- Spectral + molecular feature fusion.
+- Metadata-aware fusion models.
+- Multimodal dataset schema for fluorescence, Raman, UV-Vis, FTIR, and molecular descriptors.

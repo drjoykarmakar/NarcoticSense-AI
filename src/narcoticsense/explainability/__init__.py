@@ -1,3 +1,15 @@
-from narcoticsense.explainability.attribution import peak_level_attribution
+from .attribution import peak_level_attribution as simple_peak_attribution
+from .spectral import (
+    ExplanationResult,
+    peak_level_attribution,
+    permutation_importance_table,
+    spectral_occlusion_importance,
+)
 
-__all__ = ["peak_level_attribution"]
+__all__ = [
+    "simple_peak_attribution",
+    "ExplanationResult",
+    "spectral_occlusion_importance",
+    "peak_level_attribution",
+    "permutation_importance_table",
+]

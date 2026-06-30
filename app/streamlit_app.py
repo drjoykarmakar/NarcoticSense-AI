@@ -24,11 +24,13 @@ try:
         run_tsne,
         run_umap,
     )
+    from narcoticsense.explainability import peak_level_attribution, spectral_occlusion_importance
     from narcoticsense.feature_engineering import derivative_spectrum, peak_table, spectral_metrics
     from narcoticsense.library import library_match
     from narcoticsense.models import (
         available_classification_models,
         available_regression_models,
+        build_classifier,
         save_model_bundle,
         train_classification_model,
         train_regression_model,
@@ -40,6 +42,10 @@ try:
         dataset_summary,
         import_spectrum,
         spectra_to_long_dataframe,
+    )
+    from narcoticsense.uncertainty import (
+        cross_validated_model_comparison,
+        trustworthy_classification_report,
     )
     from narcoticsense.validation import (
         dataset_quality_report,
@@ -122,7 +128,8 @@ tabs = st.tabs(
         "5 Chemometrics",
         "6 Library Match",
         "7 AI Model Engine",
-        "8 Report",
+        "8 Trustworthy AI",
+        "9 Report",
         "Chemist Guide",
     ]
 )
@@ -757,6 +764,146 @@ Start with PCA/PLS/random forest/SVM. Use CNNs or transformers only after the da
         st.info("Import at least four spectra and upload metadata to train supervised models.")
 
 with tabs[7]:
+    st.subheader("Trustworthy AI: explainability, uncertainty, and unknown detection")
+    st.info(
+        "v0.6.0 adds model trust tools: confidence, OOD/unknown flags, conformal prediction sets, cross-validated model comparison, and spectral-region explanations."
+    )
+    if len(st.session_state.processed) < 4 or st.session_state.metadata.empty:
+        st.info("Import at least four spectra and upload metadata to use trustworthy AI tools.")
+    else:
+        n_points_trust = st.slider(
+            "Trust analysis grid points", 100, 2000, 500, step=100, key="trust_grid"
+        )
+        aligned_trust = align_spectra(st.session_state.processed, n_points=n_points_trust)
+        candidate_cols = [c for c in st.session_state.metadata.columns if c != "sample_id"]
+        if not candidate_cols:
+            st.warning("Metadata needs at least one label column besides sample_id.")
+        else:
+            label_col_trust = st.selectbox(
+                "Trust label column", candidate_cols, key="trust_label_col"
+            )
+            joined_trust = pd.DataFrame({"sample_id": aligned_trust.sample_ids}).merge(
+                st.session_state.metadata[["sample_id", label_col_trust]],
+                on="sample_id",
+                how="left",
+            )
+            keep_trust = joined_trust[label_col_trust].notna() & (
+                joined_trust[label_col_trust].astype(str).str.len() > 0
+            )
+            y_trust = joined_trust.loc[keep_trust, label_col_trust].astype(str).tolist()
+            x_trust = aligned_trust.matrix[keep_trust.to_numpy()]
+            ids_trust = joined_trust.loc[keep_trust, "sample_id"].astype(str).tolist()
+            if len(set(y_trust)) < 2 or len(y_trust) < 4:
+                st.warning("Need at least two classes and four labeled spectra.")
+            else:
+                trust_model_name = st.selectbox(
+                    "Trust model", available_classification_models(), key="trust_model"
+                )
+                conf_threshold = st.slider("Low-confidence threshold", 0.50, 0.99, 0.70, step=0.01)
+                alpha = st.slider("Conformal alpha", 0.01, 0.30, 0.10, step=0.01)
+                model_builders = {
+                    name: (lambda n=name: build_classifier(n))
+                    for name in available_classification_models()
+                }
+                if st.button("Run robust validation and trust analysis"):
+                    try:
+                        comparison = cross_validated_model_comparison(
+                            model_builders, x_trust, y_trust
+                        )
+                        model = build_classifier(trust_model_name)
+                        trust = trustworthy_classification_report(
+                            model,
+                            x_trust,
+                            y_trust,
+                            x_trust,
+                            sample_ids=ids_trust,
+                            confidence_threshold=float(conf_threshold),
+                            alpha=float(alpha),
+                        )
+                        st.session_state["trust_analysis"] = {
+                            "model": model,
+                            "comparison": comparison,
+                            "trust": trust,
+                            "aligned": aligned_trust,
+                            "keep": keep_trust.to_numpy(),
+                            "ids": ids_trust,
+                            "labels": y_trust,
+                        }
+                        st.success("Trust analysis complete.")
+                    except Exception as exc:
+                        st.error(f"Trust analysis failed: {exc}")
+                analysis = st.session_state.get("trust_analysis")
+                if analysis is not None:
+                    st.markdown("### Cross-validated model comparison")
+                    st.dataframe(analysis["comparison"], use_container_width=True)
+                    st.download_button(
+                        "Download model comparison",
+                        analysis["comparison"].to_csv(index=False),
+                        file_name="model_comparison_cv.csv",
+                        mime="text/csv",
+                    )
+                    trust = analysis["trust"]
+                    st.markdown("### Trust summary")
+                    st.dataframe(trust.summary, use_container_width=True)
+                    st.markdown("### Confidence, conformal prediction sets, and OOD flags")
+                    st.dataframe(trust.predictions, use_container_width=True)
+                    st.download_button(
+                        "Download trust predictions",
+                        trust.predictions.to_csv(index=False),
+                        file_name="trust_predictions.csv",
+                        mime="text/csv",
+                    )
+                    st.markdown("### Conformal thresholds")
+                    st.dataframe(trust.thresholds, use_container_width=True)
+                    st.markdown("### Explain one spectrum")
+                    explain_id = st.selectbox(
+                        "Spectrum to explain", analysis["ids"], key="explain_id"
+                    )
+                    idx = analysis["ids"].index(explain_id)
+                    target_class = str(
+                        analysis["model"].predict(
+                            analysis["aligned"].matrix[analysis["keep"]][idx].reshape(1, -1)
+                        )[0]
+                    )
+                    window = st.slider("Explanation window size", 3, 101, 21, step=2)
+                    try:
+                        attr = spectral_occlusion_importance(
+                            analysis["model"],
+                            analysis["aligned"].matrix[analysis["keep"]][idx],
+                            x_axis=analysis["aligned"].x,
+                            target_class=target_class,
+                            window_size=int(window),
+                        )
+                        st.write(f"Explaining predicted class: **{target_class}**")
+                        st.dataframe(attr.head(30), use_container_width=True)
+                        st.line_chart(attr.sort_values("x").set_index("x")[["importance"]])
+                        st.download_button(
+                            "Download spectral attribution",
+                            attr.to_csv(index=False),
+                            file_name=f"{explain_id}_spectral_attribution.csv",
+                            mime="text/csv",
+                        )
+                        try:
+                            spectrum = next(
+                                s for s in st.session_state.processed if s.sample_id == explain_id
+                            )
+                            peaks = peak_table(spectrum, prominence=prominence, max_peaks=100)
+                            peak_attr = peak_level_attribution(attr, peaks)
+                            if not peak_attr.empty:
+                                st.markdown("### Peak-level attribution")
+                                st.dataframe(peak_attr, use_container_width=True)
+                                st.download_button(
+                                    "Download peak-level attribution",
+                                    peak_attr.to_csv(index=False),
+                                    file_name=f"{explain_id}_peak_attribution.csv",
+                                    mime="text/csv",
+                                )
+                        except Exception as exc:
+                            st.caption(f"Peak-level attribution skipped: {exc}")
+                    except Exception as exc:
+                        st.info(f"Explanation skipped: {exc}")
+
+with tabs[8]:
     st.subheader("Research report")
     notes = st.text_area(
         "Scientist notes",
@@ -800,7 +947,7 @@ with tabs[7]:
         )
         st.markdown(report)
 
-with tabs[8]:
+with tabs[9]:
     st.subheader("Chemist guide")
     st.markdown("""
 You do **not** need to be an AI engineer. Your main job is to create trustworthy spectra.

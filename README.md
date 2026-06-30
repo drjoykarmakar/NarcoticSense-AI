@@ -221,7 +221,17 @@ https://github.com/drjoykarmakar
 
 # Citation
 
-If you use **NarcoticSense AI** in research, please cite the software using the metadata provided in:
+If you use **NarcoticSense AI** in research, please cite the software using the metadata provided in: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21082057.svg
+        
+        
+        
+        )](https://doi.org/10.5281/zenodo.21082057
+        
+        
+        
+        )
+
+# NarcoticSense AI
 
 ```
 CITATION.cff

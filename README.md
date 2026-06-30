@@ -1,165 +1,334 @@
 # NarcoticSense AI
 
-**Open-source AI spectroscopy operating system for narcotic sensing research and analytical chemistry.**
+<p align="center">
 
-NarcoticSense AI is a chemist-friendly platform for importing, visualizing, preprocessing, analyzing, and reporting spectroscopy data. It is designed for spectroscopy researchers first, with AI/ML components added in a transparent and reproducible way.
+**An Open-Source AI Platform for Spectroscopic Narcotic Sensing, Chemometrics, and Analytical Chemistry**
 
-> Responsible use: this software is for research, screening, visualization, and decision support only. High-stakes findings must be confirmed using validated laboratory methods.
+*Designed for researchers, forensic scientists, analytical chemists, and spectroscopy developers.*
 
-## Quick start on Mac
+</p>
 
-1. Download or clone the repository.
-2. Open the project folder.
-3. Double-click `START_HERE.command`.
-4. Upload CSV/TXT/TSV spectroscopy files.
+---
 
-Manual method:
+## Overview
 
-```bash
-python3 -m pip install -r requirements.txt
-export PYTHONPATH="$PWD/src:$PYTHONPATH"
-python3 -m streamlit run app/streamlit_app.py
-```
+**NarcoticSense AI** is an open-source, chemist-friendly platform for importing, preprocessing, visualizing, analyzing, and interpreting spectroscopic data using modern chemometrics and artificial intelligence.
 
-## Quick start from GitHub
+The project aims to provide a reproducible research platform for spectroscopy-based narcotic sensing while remaining extensible to broader analytical chemistry applications including fluorescence, Raman, UV–Visible, FTIR, and future multimodal sensing technologies.
+
+Rather than being a single machine-learning model, NarcoticSense AI is designed as a **scientific operating system** for spectroscopy research.
+
+---
+
+## Current Capabilities
+
+### Spectroscopy
+
+- Universal spectroscopy importer
+- Automatic vendor-style CSV parsing
+- Automatic wavelength/intensity detection
+- Multi-file datasets
+- Batch processing
+- Spectral overlays
+- Interactive visualization
+- Baseline correction
+- Smoothing
+- Normalization
+- Derivative spectra
+- Peak detection
+- Peak FWHM
+- Peak integration
+- Spectral metrics
+
+---
+
+### Chemometrics
+
+- PCA
+- PLS Regression
+- PLS-DA
+- LDA
+- SIMCA-style class modeling
+- UMAP
+- t-SNE
+- Hierarchical clustering
+- K-Means clustering
+- Spectral similarity matrices
+
+---
+
+### Artificial Intelligence
+
+- Random Forest
+- Support Vector Machine
+- Logistic Regression
+- Gradient Boosting
+- Extra Trees
+- K-Nearest Neighbors
+- Ridge Regression
+- PLS Regression
+- Random Forest Regression
+- Support Vector Regression
+
+---
+
+### Trustworthy AI
+
+- Confidence estimation
+- Conformal prediction
+- Unknown / Out-of-distribution detection
+- Cross-validation
+- Model comparison
+- Peak-level attribution
+- Spectral-region explainability
+- Decision-support flags for confirmatory testing
+
+---
+
+### Data Management
+
+- Dataset manager
+- Metadata templates
+- Multi-file upload
+- Spectral library matching
+- Processed spectrum export
+- Markdown report generation
+
+---
+
+### Software Engineering
+
+- Streamlit interface
+- FastAPI backend
+- Docker support
+- GitHub Actions
+- Unit testing
+- Apache License 2.0
+- Reproducible environments
+
+---
+
+# Research Vision
+
+The long-term goal is to build an open scientific platform integrating:
+
+- Fluorescence spectroscopy
+- Raman spectroscopy
+- UV–Visible spectroscopy
+- FTIR spectroscopy
+- Hyperspectral imaging
+- Chemometrics
+- Explainable AI
+- Uncertainty quantification
+- Active learning
+- Molecular descriptors
+- RDKit integration
+- Large Language Models
+- Scientific report generation
+
+---
+
+# Installation
+
+Clone the repository
 
 ```bash
 git clone https://github.com/drjoykarmakar/NarcoticSense-AI.git
 cd NarcoticSense-AI
+```
+
+Install dependencies
+
+```bash
 python3 -m pip install -r requirements.txt
+```
+
+Run
+
+```bash
 export PYTHONPATH="$PWD/src:$PYTHONPATH"
 python3 -m streamlit run app/streamlit_app.py
 ```
 
-For development:
+---
+
+# Development
+
+Install development environment
 
 ```bash
 python3 -m pip install -e ".[dev]"
+```
+
+Run tests
+
+```bash
 python3 -m pytest
 ```
 
-
-
-New in v0.6.0:
-
-- Trustworthy AI tab for confidence, uncertainty, and unknown detection.
-- Cross-validated model comparison across available classifiers.
-- Confidence tables with probability margins.
-- Conformal prediction sets for uncertainty-aware classification.
-- Distance-based out-of-distribution / unknown-sample flags.
-- Automatic "refer to confirmatory testing" decision-support flag.
-- Spectral occlusion explainability for influential spectral regions.
-- Peak-level attribution connecting model explanations to detected peaks.
-- Expanded tests for uncertainty, explainability, OOD detection, and validation.
-
-New in v0.5.0:
-
-- AI Model Engine tab.
-- Classification models: Random Forest, Extra Trees, Gradient Boosting, Logistic Regression, SVM, and KNN.
-- Regression models: PLS Regression, Random Forest Regressor, Ridge Regression, and SVR.
-- Train/test split controls.
-- Classification metrics, regression metrics, predictions, probabilities, and confusion matrix outputs.
-- Feature importance for supported models.
-- Save trained models to the `models/` directory.
-- New `narcoticsense.models` package.
-- Expanded tests for model training, evaluation, and serialization.
-
-New in v0.3.0:
-
-- Professional spectroscopy engine upgrades.
-- Baseline method selector: AsLS, airPLS, and arPLS.
-- Peak FWHM in spectral x-axis units.
-- Peak integration over FWHM windows.
-- Batch export of all processed spectra in long CSV format.
-- Interactive Plotly HTML figure export for overlays and derivatives.
-- Preprocessing history metadata for reproducibility.
-
-New in v0.2.0:
-- Dataset quality checks for uploaded spectra.
-- Optional metadata CSV upload with sample labels/classes.
-- Spectral library matching by similarity.
-- PLS-DA, LDA, SIMCA-style class modeling, and PLS regression when metadata are available.
-- Cross-validated supervised ML baseline using Random Forest or SVM with probability, calibration, ROC, and PR validation exports.
-- Extra unit tests for quality control, library matching, and ML evaluation.
-
-## Current features
-
-- Universal spectroscopy importer for common CSV/TXT/TSV vendor-like exports.
-- Auto-detection of columns such as `Wavelength (nm)`, `Raman Shift`, `Abs`, `Intensity`, and `Counts`.
-- Automatic handling of title/header rows, empty columns, and descending x-axes.
-- Multi-file upload.
-- Dataset manager and metadata template export.
-- Raw, processed, overlay, and derivative spectra viewer.
-- Baseline correction using AsLS/airPLS/arPLS, smoothing, and normalization.
-- Peak table, FWHM, peak integration, and spectral metrics.
-- PCA, t-SNE, and K-means chemometrics.
-- Aligned spectral matrix export for future ML.
-- AI dataset planning tab.
-- Trustworthy AI: confidence, conformal prediction sets, OOD flags, model comparison, and spectral-region explanations.
-- Markdown research report generator.
-- FastAPI starter backend.
-- Tests, Docker files, and GitHub Actions CI.
-
-## Example spectrum format
-
-Simple CSV:
-
-```csv
-x,y
-200,0.12
-201,0.15
-202,0.19
-```
-
-Vendor-like files are also supported, including files with a title row followed by columns such as:
-
-```csv
-Wavelength (nm),Abs
-800.0,-0.003
-799.0,-0.002
-```
-
-## Project structure
-
-```text
-app/                    Streamlit app
-src/narcoticsense/      Python package
-tests/                  Unit tests
-docs/                   User and developer docs
-examples/               Example spectra
-configs/                Configuration files
-docker/                 Docker components
-.github/                GitHub Actions and templates
-scripts/                Helper scripts
-```
-
-## Scientific modules
-
-- `spectroscopy`: spectrum objects, importers, alignment, datasets.
-- `preprocessing`: smoothing, baseline correction, normalization.
-- `feature_engineering`: peaks, derivatives, spectral metrics.
-- `chemometrics`: PCA, t-SNE, clustering.
-- `visualization`: Plotly scientific plots.
-- `reports`: Markdown research reports.
-- `classical_ml`: starter classifier wrapper.
-- `uncertainty`: conformal prediction starter.
-- `explainability`: spectral attribution starter.
-- `api`: FastAPI starter service.
-
-## Test status
-
-Run locally:
+Run linting
 
 ```bash
 python3 -m ruff check src tests app
 python3 -m black --check src tests app
-python3 -m pytest -q
 ```
 
-## License
+---
 
-Code is licensed under the Apache License 2.0. See [`LICENSE`](LICENSE), [`NOTICE`](NOTICE), and [`DATA_LICENSE.md`](DATA_LICENSE.md).
+# Supported Data Formats
 
-## Citation
+- CSV
+- TXT
+- TSV
+- Vendor exports
+- Wavelength–Intensity tables
+- Raman Shift–Intensity tables
 
-See [`CITATION.cff`](CITATION.cff).
+Future releases will support
+
+- JCAMP-DX
+- Excel
+- Ocean Insight
+- Horiba
+- Agilent
+- Thermo Fisher
+- Shimadzu
+- Bruker
+
+---
+
+# Project Structure
+
+```
+app/
+configs/
+docker/
+docs/
+examples/
+scripts/
+src/
+tests/
+```
+
+Core package
+
+```
+src/narcoticsense/
+
+    spectroscopy/
+    preprocessing/
+    feature_engineering/
+    chemometrics/
+    models/
+    uncertainty/
+    explainability/
+    molecular/
+    fusion/
+    reports/
+    visualization/
+    api/
+```
+
+---
+
+# Roadmap
+
+### v0.8
+
+- Deep Learning
+- Spectral CNN
+- Spectral Transformers
+- Contrastive Learning
+- Foundation Models
+
+### v0.9
+
+- LLM Scientific Assistant
+- Experiment Interpretation
+- Literature Summarization
+- Automated Methods Generation
+
+### v1.0
+
+- Research Edition
+- Stable API
+- Complete Documentation
+- Benchmark Datasets
+- Cloud Deployment
+- Zenodo DOI
+- SoftwareX / JOSS submission
+
+---
+
+# Responsible Use
+
+NarcoticSense AI is intended for:
+
+- Scientific research
+- Education
+- Method development
+- Decision support
+
+It is **not** a certified forensic, clinical, or diagnostic system.
+
+All high-stakes decisions should be confirmed using validated laboratory procedures and appropriate quality assurance protocols.
+
+---
+
+# Author
+
+## Dr. Joy Karmakar, Ph.D.
+
+Founder & Principal Developer — **NarcoticSense AI**
+
+Founder — **DyeMind**
+
+🌐 https://www.dyemind.com
+
+GitHub
+
+https://github.com/drjoykarmakar
+
+ORCID
+
+https://orcid.org/0000-0002-8232-5639
+
+### Research Interests
+
+- Artificial Intelligence for Spectroscopy
+- Fluorescence Spectroscopy
+- Raman Spectroscopy
+- Chemometrics
+- Analytical Chemistry
+- Molecular Sensing
+- Intelligent Sensor Development
+
+---
+
+# Citation
+
+If you use NarcoticSense AI in your research, please cite the software using the metadata in:
+
+```
+CITATION.cff
+```
+
+---
+
+# License
+
+Apache License 2.0
+
+See
+
+- LICENSE
+- NOTICE
+- DATA_LICENSE.md
+
+---
+
+# Acknowledgements
+
+NarcoticSense AI is an open research initiative developed to accelerate reproducible spectroscopy research and foster collaboration across analytical chemistry, machine learning, and sensor science.
+
+Contributions, feature requests, and collaborations are welcome.

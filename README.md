@@ -6,6 +6,10 @@ NarcoticSense AI is a chemist-friendly platform for importing, visualizing, prep
 
 > Responsible use: this software is for research, screening, visualization, and decision support only. High-stakes findings must be confirmed using validated laboratory methods.
 
+> **Created and maintained by Dr. Joy Karmakar (DyeMind).**
+>
+> An open-source research platform for spectroscopy, chemometrics, and trustworthy AI.
+
 ## Quick start on Mac
 
 1. Download or clone the repository.
@@ -179,7 +183,88 @@ python3 -m ruff check src tests app
 python3 -m black --check src tests app
 python3 -m pytest -q
 ```
+---
 
+# Author
+
+## Dr. Joy Karmakar ##
+
+**Founder & Principal Developer — NarcoticSense AI**
+
+Founder — **DyeMind**
+
+🌐 Website  
+https://www.dyemind.com
+
+🆔 ORCID  
+https://orcid.org/0000-0002-8232-5639
+
+💻 GitHub  
+https://github.com/drjoykarmakar
+
+---
+
+## Research Interests
+
+- Artificial Intelligence for Spectroscopy
+- Fluorescence Spectroscopy
+- Raman Spectroscopy
+- Chemometrics
+- Analytical Chemistry
+- Molecular Sensing
+- Intelligent Sensor Development
+- Scientific Machine Learning
+- Explainable Artificial Intelligence
+- Multimodal Spectroscopic Analysis
+
+---
+
+# Citation
+
+If you use **NarcoticSense AI** in research, please cite the software using the metadata provided in:
+
+```
+CITATION.cff
+```
+
+or cite the GitHub release DOI (when available through Zenodo).
+
+---
+
+# License
+
+This project is distributed under the **Apache License 2.0**.
+
+See:
+
+- LICENSE
+- NOTICE
+- DATA_LICENSE.md
+
+---
+
+# Collaboration
+
+Collaborations are welcome from researchers working in:
+
+- Spectroscopy
+- Analytical Chemistry
+- Chemometrics
+- Machine Learning
+- Sensor Development
+- Biomedical Engineering
+- Pharmaceutical Sciences
+- Forensic Science
+
+For collaboration opportunities, please contact us through GitHub or via **https://www.dyemind.com**.
+
+---
+
+# Acknowledgements
+
+NarcoticSense AI is an independent open-source research initiative founded and developed by **Dr. Joy Karmakar** through **DyeMind**.
+
+The long-term vision is to build a transparent, reproducible, and extensible AI platform for spectroscopy that supports researchers worldwide in analytical chemistry, sensor science, and molecular detection.
 ## License
 
 Code is licensed under the Apache License 2.0. See [`LICENSE`](LICENSE), [`NOTICE`](NOTICE), and [`DATA_LICENSE.md`](DATA_LICENSE.md).

@@ -1,6 +1,9 @@
 cff-version: 1.2.0
 title: NarcoticSense AI
 message: If you use this software, please cite it.
+
+Karmakar, J. (2026) “NarcoticSense AI”. Zenodo. doi:10.5281/zenodo.21082057.
+
 type: software
 authors:
   - family-names: Karmakar
@@ -8,6 +11,8 @@ authors:
     affiliation: DyeMind
     orcid: https://orcid.org/0000-0002-8232-5639
     doi: 10.5281/zenodo.21082057
+        
+        
 repository-code: https://github.com/drjoykarmakar/NarcoticSense-AI
 url: https://github.com/drjoykarmakar/NarcoticSense-AI
 version: 0.7.0

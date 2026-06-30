@@ -10,6 +10,16 @@ from .engine import (
     train_classification_model,
     train_regression_model,
 )
+from .workflow import (
+    PredictionWorkflowResult,
+    RealAIWorkflowResult,
+    list_model_registry,
+    load_real_ai_model,
+    predict_unknowns_with_bundle,
+    prepare_training_table,
+    train_save_real_ai_classifier,
+    validate_training_table,
+)
 
 __all__ = [
     "ModelTrainingResult",
@@ -22,4 +32,12 @@ __all__ = [
     "save_model_bundle",
     "train_classification_model",
     "train_regression_model",
+    "PredictionWorkflowResult",
+    "RealAIWorkflowResult",
+    "list_model_registry",
+    "load_real_ai_model",
+    "predict_unknowns_with_bundle",
+    "prepare_training_table",
+    "train_save_real_ai_classifier",
+    "validate_training_table",
 ]

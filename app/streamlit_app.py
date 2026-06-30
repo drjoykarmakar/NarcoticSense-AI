@@ -32,9 +32,15 @@ try:
         available_classification_models,
         available_regression_models,
         build_classifier,
+        list_model_registry,
+        load_real_ai_model,
+        predict_unknowns_with_bundle,
+        prepare_training_table,
         save_model_bundle,
         train_classification_model,
         train_regression_model,
+        train_save_real_ai_classifier,
+        validate_training_table,
     )
     from narcoticsense.molecular import build_molecular_feature_table, rdkit_available
     from narcoticsense.preprocessing import PreprocessingPipeline
@@ -131,8 +137,9 @@ tabs = st.tabs(
         "6 Library Match",
         "7 AI Model Engine",
         "8 Trustworthy AI",
-        "9 Molecular + Fusion",
-        "10 Report",
+        "9 Real AI Workflow",
+        "10 Molecular + Fusion",
+        "11 Report",
         "Chemist Guide",
     ]
 )
@@ -907,6 +914,137 @@ with tabs[7]:
                         st.info(f"Explanation skipped: {exc}")
 
 with tabs[8]:
+    st.subheader("Real AI Training + Prediction Workflow")
+    st.info(
+        "v0.8.0 separates real model training from prediction. The model learns only when you intentionally train and save it from approved labeled spectra. Uploading an unknown spectrum does not retrain the model."
+    )
+    models_dir = PROJECT_ROOT / "models"
+    models_dir.mkdir(exist_ok=True)
+
+    workflow_train, workflow_predict, workflow_registry = st.tabs(
+        ["Build training set", "Predict unknowns", "Model registry"]
+    )
+
+    with workflow_train:
+        if len(st.session_state.processed) < 4 or st.session_state.metadata.empty:
+            st.warning(
+                "Import spectra and upload metadata first. Real AI training needs labeled reference spectra. Use blank labels or `unknown` for spectra that should not be used for training."
+            )
+        else:
+            n_points_real = st.slider(
+                "Real AI grid points", 100, 2000, 500, step=100, key="real_ai_grid"
+            )
+            aligned_real = align_spectra(st.session_state.processed, n_points=n_points_real)
+            label_options = [c for c in st.session_state.metadata.columns if c != "sample_id"]
+            label_col_real = st.selectbox(
+                "Training label column", label_options, key="real_ai_label_col"
+            )
+            training_table = prepare_training_table(
+                aligned_real.sample_ids, st.session_state.metadata, label_column=label_col_real
+            )
+            checks = validate_training_table(training_table, label_column=label_col_real)
+            st.markdown("### Training table")
+            st.dataframe(training_table, use_container_width=True)
+            st.markdown("### Training readiness checks")
+            st.dataframe(checks, use_container_width=True)
+            st.download_button(
+                "Download training table",
+                training_table.to_csv(index=False),
+                file_name="real_ai_training_table.csv",
+                mime="text/csv",
+            )
+            model_name_real = st.selectbox(
+                "Classifier to save", available_classification_models(), key="real_ai_model"
+            )
+            test_size_real = st.slider(
+                "Validation test fraction", 0.10, 0.50, 0.25, step=0.05, key="real_ai_test"
+            )
+            failed = not checks[checks["status"] == "fail"].empty
+            if failed:
+                st.error("Training is blocked until failed checks are resolved.")
+            if st.button("Train and save real AI model", disabled=failed):
+                try:
+                    workflow_result = train_save_real_ai_classifier(
+                        aligned_real,
+                        st.session_state.metadata,
+                        models_dir,
+                        label_column=label_col_real,
+                        model_name=model_name_real,
+                        project_name=project_name,
+                        test_size=float(test_size_real),
+                    )
+                    st.session_state["real_ai_last"] = workflow_result
+                    st.success(f"Saved controlled AI model: {workflow_result.model_path.name}")
+                except Exception as exc:
+                    st.error(f"Real AI training failed: {exc}")
+            workflow_result = st.session_state.get("real_ai_last")
+            if workflow_result is not None:
+                st.markdown("### Validation metrics")
+                st.dataframe(workflow_result.validation.metrics, use_container_width=True)
+                st.markdown("### Holdout predictions")
+                st.dataframe(workflow_result.validation.predictions, use_container_width=True)
+                if workflow_result.validation.confusion is not None:
+                    st.markdown("### Confusion matrix")
+                    st.dataframe(workflow_result.validation.confusion, use_container_width=True)
+                st.caption(
+                    "The saved model is refit on all approved labeled spectra after validation. Unknown/unlabeled spectra are not used for training."
+                )
+
+    with workflow_predict:
+        registry = list_model_registry(models_dir)
+        if registry.empty:
+            st.warning("No saved AI models found. Train and save a model first.")
+        elif not st.session_state.processed:
+            st.info("Import spectra to analyze as unknowns.")
+        else:
+            st.dataframe(registry, use_container_width=True)
+            model_file = st.selectbox("Saved model", registry["file"].tolist(), key="real_ai_saved")
+            selected_path = registry.loc[registry["file"] == model_file, "path"].iloc[0]
+            conf_real = st.slider(
+                "Confirmatory-testing confidence threshold",
+                0.50,
+                0.99,
+                0.70,
+                step=0.01,
+                key="real_ai_conf",
+            )
+            bundle = load_real_ai_model(selected_path)
+            model_n_points = int(bundle.get("metadata", {}).get("n_points", 500))
+            try:
+                aligned_unknown = align_spectra(st.session_state.processed, n_points=model_n_points)
+                prediction_result = predict_unknowns_with_bundle(
+                    bundle, aligned_unknown, confidence_threshold=float(conf_real)
+                )
+                st.markdown("### Prediction summary")
+                st.dataframe(prediction_result.summary, use_container_width=True)
+                st.markdown("### Unknown-sample predictions")
+                st.dataframe(prediction_result.predictions, use_container_width=True)
+                st.download_button(
+                    "Download unknown prediction report",
+                    prediction_result.predictions.to_csv(index=False),
+                    file_name="real_ai_unknown_predictions.csv",
+                    mime="text/csv",
+                )
+                st.warning(
+                    "These are screening predictions only. Samples marked `refer_to_confirmatory_testing` should be verified using validated laboratory methods."
+                )
+            except Exception as exc:
+                st.error(f"Prediction failed: {exc}")
+
+    with workflow_registry:
+        registry = list_model_registry(models_dir)
+        if registry.empty:
+            st.info("No models are saved yet.")
+        else:
+            st.dataframe(registry, use_container_width=True)
+            st.download_button(
+                "Download model registry",
+                registry.to_csv(index=False),
+                file_name="model_registry.csv",
+                mime="text/csv",
+            )
+
+with tabs[9]:
     st.subheader("Molecular + Multimodal AI")
     st.info(
         "v0.7.0 adds optional molecular descriptors/fingerprints and early-fusion matrices. "
@@ -1008,7 +1146,7 @@ with tabs[8]:
         except Exception as exc:
             st.error(f"Molecular/fusion workflow failed: {exc}")
 
-with tabs[9]:
+with tabs[10]:
     st.subheader("Research report")
     notes = st.text_area(
         "Scientist notes",
@@ -1052,7 +1190,7 @@ with tabs[9]:
         )
         st.markdown(report)
 
-with tabs[10]:
+with tabs[11]:
     st.subheader("Chemist guide")
     st.markdown("""
 You do **not** need to be an AI engineer. Your main job is to create trustworthy spectra.

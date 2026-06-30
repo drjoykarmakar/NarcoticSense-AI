@@ -53,9 +53,26 @@
 - Responsible-use documentation.
 
 
-## Next: v0.7.0 - Molecular and Multimodal AI
+## v0.7.0 - completed: Molecular and Multimodal AI
 
-- RDKit optional integration for SMILES descriptors and fingerprints.
-- Spectral + molecular feature fusion.
-- Metadata-aware fusion models.
+- Optional RDKit integration for SMILES descriptors and fingerprints.
+- Safe fallback molecular features when RDKit is unavailable.
+- Spectral + molecular early-fusion matrix export.
+- Metadata-aware fusion workflow.
 - Multimodal dataset schema for fluorescence, Raman, UV-Vis, FTIR, and molecular descriptors.
+
+
+## v0.8.0 - completed: Real AI Training and Prediction Workflow
+
+- End-to-end tutorial notebook.
+- Public-data importer notes for licensing-safe datasets.
+- Benchmark workflow for spectral libraries and published supplementary data.
+- Reproducible example figures and validation reports.
+
+
+## Next: v0.9.0 - Scientific Assistant and Tutorials
+
+- Claude/OpenAI assistant integration for report drafting and experimental interpretation.
+- End-to-end tutorial notebook: upload → preprocess → train → predict → explain → report.
+- Public-data validation examples where licensing permits.
+- Software paper preparation materials for JOSS/SoftwareX.

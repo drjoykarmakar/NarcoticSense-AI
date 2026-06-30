@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.8.0 - Real AI Training and Prediction Workflow
+
+- Added controlled real-AI workflow for training models only from approved labeled spectra.
+- Added training table generation, readiness checks, and explicit unknown/unlabeled handling.
+- Added model registry for saved `.joblib` model bundles.
+- Added unknown-sample prediction workflow with confidence, probability margin, OOD distance, and confirmatory-testing flags.
+- Added reusable `narcoticsense.models.workflow` utilities for controlled training and inference.
+- Added tests for training table validation, model saving, registry listing, and unknown prediction.
+
 ## v0.7.0 - Molecular and Multimodal AI
 
 - Added Molecular + Multimodal AI tab.
@@ -38,6 +47,15 @@
 
 # Changelog
 
+## v0.8.0 - Real AI Training and Prediction Workflow
+
+- Added controlled real-AI workflow for training models only from approved labeled spectra.
+- Added training table generation, readiness checks, and explicit unknown/unlabeled handling.
+- Added model registry for saved `.joblib` model bundles.
+- Added unknown-sample prediction workflow with confidence, probability margin, OOD distance, and confirmatory-testing flags.
+- Added reusable `narcoticsense.models.workflow` utilities for controlled training and inference.
+- Added tests for training table validation, model saving, registry listing, and unknown prediction.
+
 ## v0.3.0
 
 - Added spectroscopy engine upgrades: AsLS, airPLS, and arPLS baseline options.
@@ -48,6 +66,15 @@
 - Added preprocessing history metadata and additional tests.
 
 # Changelog
+
+## v0.8.0 - Real AI Training and Prediction Workflow
+
+- Added controlled real-AI workflow for training models only from approved labeled spectra.
+- Added training table generation, readiness checks, and explicit unknown/unlabeled handling.
+- Added model registry for saved `.joblib` model bundles.
+- Added unknown-sample prediction workflow with confidence, probability margin, OOD distance, and confirmatory-testing flags.
+- Added reusable `narcoticsense.models.workflow` utilities for controlled training and inference.
+- Added tests for training table validation, model saving, registry listing, and unknown prediction.
 
 ## v0.2.0 - Chemometrics and ML foundation
 

@@ -219,17 +219,13 @@ https://github.com/drjoykarmakar
 
 ---
 
-# Citation
+## Citation
 
-If you use **NarcoticSense AI** in research, please cite the software using the metadata provided in: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21082057.svg
-        
-        
-        
-        )](https://doi.org/10.5281/zenodo.21082057
-        
-        
-        
-        )
+If you use NarcoticSense AI in your research, please cite:
+
+Karmakar, J. (2026). *NarcoticSense AI* (Version 0.8.0). Zenodo.
+
+https://doi.org/10.5281/zenodo.21082057
 
 # NarcoticSense AI
 

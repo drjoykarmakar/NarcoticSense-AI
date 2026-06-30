@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Any, Iterable
+from typing import Any
 
 import numpy as np
 
@@ -30,7 +31,9 @@ class Spectrum:
     def n_points(self) -> int:
         return int(len(self.x))
 
-    def copy_with(self, *, x: np.ndarray | None = None, y: np.ndarray | None = None, **metadata: Any) -> "Spectrum":
+    def copy_with(
+        self, *, x: np.ndarray | None = None, y: np.ndarray | None = None, **metadata: Any
+    ) -> Spectrum:
         merged = dict(self.metadata)
         merged.update(metadata)
         return Spectrum(

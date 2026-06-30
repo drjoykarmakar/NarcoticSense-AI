@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from narcoticsense.spectroscopy import Spectrum
+from narcoticsense.utils.numeric import trapezoid_integral
 
 
 def spectral_metrics(spectrum: Spectrum) -> pd.DataFrame:
@@ -12,8 +13,8 @@ def spectral_metrics(spectrum: Spectrum) -> pd.DataFrame:
     y = np.asarray(spectrum.y, dtype=float)
     idx_max = int(np.argmax(y))
     idx_min = int(np.argmin(y))
-    area = float(np.trapz(y, x))
-    abs_area = float(np.trapz(np.abs(y), x))
+    area = trapezoid_integral(y, x)
+    abs_area = trapezoid_integral(np.abs(y), x)
     rows = [
         ("data points", spectrum.n_points),
         ("x minimum", float(np.min(x))),

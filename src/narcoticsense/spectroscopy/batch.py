@@ -41,7 +41,9 @@ def spectrum_from_dataframe(
     )
 
 
-def read_uploaded_csv(file_obj, *, modality: str = "unknown", sample_id: str | None = None) -> UploadResult:
+def read_uploaded_csv(
+    file_obj, *, modality: str = "unknown", sample_id: str | None = None
+) -> UploadResult:
     name = getattr(file_obj, "name", "uploaded.csv")
     try:
         content = file_obj.getvalue() if hasattr(file_obj, "getvalue") else file_obj.read()

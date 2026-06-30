@@ -27,7 +27,11 @@ def y_label(spectrum: Spectrum) -> str:
 
 def plot_spectrum(spectrum: Spectrum, title: str | None = None) -> go.Figure:
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=spectrum.x, y=spectrum.y, mode="lines", name=spectrum.sample_id or spectrum.modality))
+    fig.add_trace(
+        go.Scatter(
+            x=spectrum.x, y=spectrum.y, mode="lines", name=spectrum.sample_id or spectrum.modality
+        )
+    )
     fig.update_layout(
         title=title or f"{spectrum.modality.title()} spectrum",
         xaxis_title=axis_label(spectrum),
@@ -54,17 +58,21 @@ def plot_overlay(spectra: list[Spectrum], title: str = "Spectral overlay") -> go
     return fig
 
 
-def plot_peaks(spectrum: Spectrum, peaks: pd.DataFrame, title: str = "Peak annotations") -> go.Figure:
+def plot_peaks(
+    spectrum: Spectrum, peaks: pd.DataFrame, title: str = "Peak annotations"
+) -> go.Figure:
     fig = plot_spectrum(spectrum, title=title)
     if not peaks.empty:
-        fig.add_trace(go.Scatter(
-            x=peaks["position"],
-            y=peaks["height"],
-            mode="markers+text",
-            text=peaks["rank"].astype(str),
-            textposition="top center",
-            name="Detected peaks",
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=peaks["position"],
+                y=peaks["height"],
+                mode="markers+text",
+                text=peaks["rank"].astype(str),
+                textposition="top center",
+                name="Detected peaks",
+            )
+        )
     return fig
 
 

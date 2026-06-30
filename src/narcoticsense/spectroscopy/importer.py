@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from io import BytesIO, StringIO
+from io import StringIO
 from pathlib import Path
 from typing import Any, BinaryIO
 
@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 
 from narcoticsense.spectroscopy.core import Spectrum
-
 
 X_KEYWORDS = [
     "x",
@@ -89,7 +88,9 @@ def _drop_empty_columns(df: pd.DataFrame) -> pd.DataFrame:
     out = out.dropna(axis=1, how="all")
     keep = []
     for col in out.columns:
-        values = out[col].astype(str).str.strip().replace({"": np.nan, "nan": np.nan, "None": np.nan})
+        values = (
+            out[col].astype(str).str.strip().replace({"": np.nan, "nan": np.nan, "None": np.nan})
+        )
         if values.notna().any():
             keep.append(col)
     return out[keep]
@@ -125,7 +126,9 @@ def _choose_header(text: str) -> tuple[pd.DataFrame, int, list[str]]:
     candidates.sort(key=lambda item: item[0], reverse=True)
     _, header, df = candidates[0]
     if header > 0:
-        messages.append(f"Detected metadata/title rows above the table and used row {header + 1} as the header.")
+        messages.append(
+            f"Detected metadata/title rows above the table and used row {header + 1} as the header."
+        )
     return df, header, messages
 
 
@@ -150,7 +153,9 @@ def _choose_xy_columns(df: pd.DataFrame) -> tuple[str, str, float, list[str]]:
 
     confidence = min(1.0, (x_scores[x_col] + y_scores[y_col]) / 10.0)
     if confidence < 0.55:
-        messages.append("Automatic column mapping had moderate confidence; please verify x and y columns visually.")
+        messages.append(
+            "Automatic column mapping had moderate confidence; please verify x and y columns visually."
+        )
     return str(x_col), str(y_col), confidence, messages
 
 
@@ -172,17 +177,21 @@ def import_spectrum(
     x_col, y_col, confidence, map_messages = _choose_xy_columns(df)
     messages.extend(map_messages)
 
-    clean = pd.DataFrame({
-        "x": pd.to_numeric(df[x_col], errors="coerce"),
-        "y": pd.to_numeric(df[y_col], errors="coerce"),
-    }).dropna()
+    clean = pd.DataFrame(
+        {
+            "x": pd.to_numeric(df[x_col], errors="coerce"),
+            "y": pd.to_numeric(df[y_col], errors="coerce"),
+        }
+    ).dropna()
     if len(clean) < 2:
         raise ValueError("The selected x/y columns do not contain enough numeric data.")
     clean = clean.drop_duplicates(subset=["x"], keep="first")
 
     if sort_axis and clean["x"].iloc[0] > clean["x"].iloc[-1]:
         clean = clean.sort_values("x", ascending=True).reset_index(drop=True)
-        messages.append("Detected descending x-axis and sorted it into increasing order for analysis.")
+        messages.append(
+            "Detected descending x-axis and sorted it into increasing order for analysis."
+        )
 
     metadata = {
         "importer": "universal",

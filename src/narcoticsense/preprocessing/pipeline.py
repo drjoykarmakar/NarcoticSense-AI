@@ -18,7 +18,7 @@ class PreprocessingPipeline:
     polyorder: int = 3
 
     @classmethod
-    def default(cls) -> "PreprocessingPipeline":
+    def default(cls) -> PreprocessingPipeline:
         return cls()
 
     def transform_one(self, spectrum: Spectrum) -> Spectrum:

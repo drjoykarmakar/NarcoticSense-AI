@@ -20,7 +20,13 @@ def health() -> dict[str, str]:
 @app.post("/api/v1/models/predict", response_model=PredictionOut)
 def predict(payload: SpectrumIn) -> PredictionOut:
     # Placeholder until a validated model artifact is registered.
-    Spectrum(x=payload.x, y=payload.y, modality=payload.modality, sample_id=payload.sample_id, metadata=payload.metadata)
+    Spectrum(
+        x=payload.x,
+        y=payload.y,
+        modality=payload.modality,
+        sample_id=payload.sample_id,
+        metadata=payload.metadata,
+    )
     return PredictionOut(
         label="unvalidated_model_placeholder",
         confidence=0.0,

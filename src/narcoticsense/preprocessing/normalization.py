@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import numpy as np
 
+from narcoticsense.utils.numeric import trapezoid_integral
+
 
 def minmax(y: np.ndarray) -> np.ndarray:
     y = np.asarray(y, dtype=float)
@@ -11,7 +13,7 @@ def minmax(y: np.ndarray) -> np.ndarray:
 
 def area(y: np.ndarray) -> np.ndarray:
     y = np.asarray(y, dtype=float)
-    total = np.trapz(np.abs(y))
+    total = trapezoid_integral(np.abs(y))
     return y if total == 0 else y / total
 
 

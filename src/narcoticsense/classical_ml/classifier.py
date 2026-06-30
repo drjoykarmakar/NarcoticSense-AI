@@ -16,12 +16,19 @@ class SklearnClassifier:
 
     def __post_init__(self) -> None:
         if self.model is None:
-            self.model = Pipeline([
-                ("scaler", StandardScaler()),
-                ("clf", RandomForestClassifier(n_estimators=300, random_state=42, class_weight="balanced")),
-            ])
+            self.model = Pipeline(
+                [
+                    ("scaler", StandardScaler()),
+                    (
+                        "clf",
+                        RandomForestClassifier(
+                            n_estimators=300, random_state=42, class_weight="balanced"
+                        ),
+                    ),
+                ]
+            )
 
-    def fit(self, features: list[dict[str, float]], labels: list[str]) -> "SklearnClassifier":
+    def fit(self, features: list[dict[str, float]], labels: list[str]) -> SklearnClassifier:
         self.model.fit(pd.DataFrame(features).fillna(0.0), labels)
         return self
 
@@ -38,5 +45,5 @@ class SklearnClassifier:
         joblib.dump(self.model, path)
 
     @classmethod
-    def load(cls, path: str) -> "SklearnClassifier":
+    def load(cls, path: str) -> SklearnClassifier:
         return cls(model=joblib.load(path))

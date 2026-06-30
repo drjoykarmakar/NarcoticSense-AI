@@ -1,4 +1,4 @@
-from .core import Spectrum, SpectralDataset
+from .core import SpectralDataset, Spectrum
 from .dataset import AlignedDataset, align_spectra, dataset_summary
 from .importer import ImportResult, import_spectrum
 from .io import read_csv_spectrum

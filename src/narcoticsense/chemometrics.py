@@ -17,7 +17,9 @@ class ProjectionResult:
     loadings: pd.DataFrame | None = None
 
 
-def run_pca(matrix: np.ndarray, sample_ids: list[str], x_axis: np.ndarray, *, n_components: int = 3) -> ProjectionResult:
+def run_pca(
+    matrix: np.ndarray, sample_ids: list[str], x_axis: np.ndarray, *, n_components: int = 3
+) -> ProjectionResult:
     if matrix.shape[0] < 2:
         raise ValueError("PCA needs at least two spectra.")
     n_components = min(n_components, matrix.shape[0], matrix.shape[1])
@@ -37,7 +39,9 @@ def run_tsne(matrix: np.ndarray, sample_ids: list[str]) -> pd.DataFrame:
         raise ValueError("t-SNE needs at least four spectra.")
     scaled = StandardScaler().fit_transform(matrix)
     perplexity = max(2, min(30, matrix.shape[0] // 2))
-    coords = TSNE(n_components=2, perplexity=perplexity, init="pca", learning_rate="auto", random_state=42).fit_transform(scaled)
+    coords = TSNE(
+        n_components=2, perplexity=perplexity, init="pca", learning_rate="auto", random_state=42
+    ).fit_transform(scaled)
     return pd.DataFrame({"sample_id": sample_ids, "TSNE1": coords[:, 0], "TSNE2": coords[:, 1]})
 
 

@@ -67,15 +67,17 @@ def align_spectra(spectra: list[Spectrum], *, n_points: int = 1000) -> AlignedDa
 def dataset_summary(spectra: list[Spectrum]) -> pd.DataFrame:
     rows = []
     for i, s in enumerate(spectra, start=1):
-        rows.append({
-            "index": i,
-            "sample_id": s.sample_id or f"sample-{i:03d}",
-            "modality": s.modality,
-            "points": s.n_points,
-            "x_min": float(np.min(s.x)),
-            "x_max": float(np.max(s.x)),
-            "y_min": float(np.min(s.y)),
-            "y_max": float(np.max(s.y)),
-            "y_mean": float(np.mean(s.y)),
-        })
+        rows.append(
+            {
+                "index": i,
+                "sample_id": s.sample_id or f"sample-{i:03d}",
+                "modality": s.modality,
+                "points": s.n_points,
+                "x_min": float(np.min(s.x)),
+                "x_max": float(np.max(s.x)),
+                "y_min": float(np.min(s.y)),
+                "y_max": float(np.max(s.y)),
+                "y_mean": float(np.mean(s.y)),
+            }
+        )
     return pd.DataFrame(rows)

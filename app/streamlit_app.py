@@ -26,6 +26,7 @@ try:
     )
     from narcoticsense.explainability import peak_level_attribution, spectral_occlusion_importance
     from narcoticsense.feature_engineering import derivative_spectrum, peak_table, spectral_metrics
+    from narcoticsense.fusion import align_spectral_and_molecular, block_summary
     from narcoticsense.library import library_match
     from narcoticsense.models import (
         available_classification_models,
@@ -35,6 +36,7 @@ try:
         train_classification_model,
         train_regression_model,
     )
+    from narcoticsense.molecular import build_molecular_feature_table, rdkit_available
     from narcoticsense.preprocessing import PreprocessingPipeline
     from narcoticsense.reports import make_markdown_report
     from narcoticsense.spectroscopy import (
@@ -129,7 +131,8 @@ tabs = st.tabs(
         "6 Library Match",
         "7 AI Model Engine",
         "8 Trustworthy AI",
-        "9 Report",
+        "9 Molecular + Fusion",
+        "10 Report",
         "Chemist Guide",
     ]
 )
@@ -904,6 +907,108 @@ with tabs[7]:
                         st.info(f"Explanation skipped: {exc}")
 
 with tabs[8]:
+    st.subheader("Molecular + Multimodal AI")
+    st.info(
+        "v0.7.0 adds optional molecular descriptors/fingerprints and early-fusion matrices. "
+        "Upload metadata with `sample_id` and `smiles` columns to combine spectra with molecular features."
+    )
+    st.write(f"RDKit available in this environment: **{rdkit_available()}**")
+    if len(st.session_state.processed) < 1:
+        st.info("Import spectra first.")
+    elif st.session_state.metadata.empty:
+        st.info(
+            "Upload metadata in the Dataset tab. It should contain `sample_id` and `smiles` columns."
+        )
+        example_mol = pd.DataFrame(
+            {
+                "sample_id": [s.sample_id for s in st.session_state.processed[:3]],
+                "smiles": ["CCO", "c1ccccc1", "CC(=O)O"][: len(st.session_state.processed[:3])],
+                "compound_or_class": ["example" for _ in st.session_state.processed[:3]],
+            }
+        )
+        st.download_button(
+            "Download molecular metadata example",
+            example_mol.to_csv(index=False),
+            file_name="molecular_metadata_template.csv",
+            mime="text/csv",
+        )
+    elif "smiles" not in st.session_state.metadata.columns:
+        st.warning("Metadata was loaded, but it does not contain a `smiles` column.")
+        template = st.session_state.metadata.copy()
+        template["smiles"] = ""
+        st.download_button(
+            "Download metadata with empty smiles column",
+            template.to_csv(index=False),
+            file_name="metadata_with_smiles_column.csv",
+            mime="text/csv",
+        )
+    else:
+        fp_bits = st.select_slider("Fingerprint bits", options=[32, 64, 128, 256], value=128)
+        try:
+            mol_result = build_molecular_feature_table(
+                st.session_state.metadata, fingerprint_bits=int(fp_bits)
+            )
+            st.markdown("### Molecular descriptor table")
+            st.caption(
+                "When RDKit is installed, descriptors and Morgan fingerprints are used. "
+                "Without RDKit, deterministic fallback features keep the workflow testable but should not be treated as publication-grade chemistry descriptors."
+            )
+            st.dataframe(mol_result.table, use_container_width=True)
+            st.download_button(
+                "Download molecular feature table",
+                mol_result.table.to_csv(index=False),
+                file_name="molecular_features.csv",
+                mime="text/csv",
+            )
+            if mol_result.warnings:
+                st.warning("; ".join(mol_result.warnings[:5]))
+
+            if st.session_state.processed:
+                n_points_fusion = st.slider(
+                    "Fusion spectral grid points", 100, 2000, 500, step=100, key="fusion_grid"
+                )
+                aligned_fusion = align_spectra(st.session_state.processed, n_points=n_points_fusion)
+                descriptor_only = st.checkbox(
+                    "Use descriptors only; exclude fingerprints", value=False
+                )
+                mol_cols = mol_result.descriptor_columns if descriptor_only else None
+                fusion_result = align_spectral_and_molecular(
+                    aligned_fusion.matrix,
+                    aligned_fusion.sample_ids,
+                    mol_result.table.drop(columns=["smiles"], errors="ignore"),
+                    molecular_columns=mol_cols,
+                )
+                st.markdown("### Multimodal fusion summary")
+                st.dataframe(block_summary(fusion_result), use_container_width=True)
+                fused_columns = (
+                    ["sample_id"]
+                    + fusion_result.spectral_feature_names
+                    + fusion_result.molecular_feature_names
+                )
+                fused_df = pd.DataFrame(
+                    [
+                        [sid, *row]
+                        for sid, row in zip(
+                            fusion_result.sample_ids, fusion_result.fused, strict=True
+                        )
+                    ],
+                    columns=fused_columns,
+                )
+                st.download_button(
+                    "Download fused spectral + molecular ML matrix",
+                    fused_df.to_csv(index=False),
+                    file_name="fused_spectral_molecular_matrix.csv",
+                    mime="text/csv",
+                )
+                st.markdown("### Fusion guidance")
+                st.markdown(
+                    "Use early fusion for small transparent models. For publication-quality studies, "
+                    "compare spectral-only, molecular-only, and fused models with identical splits and external validation."
+                )
+        except Exception as exc:
+            st.error(f"Molecular/fusion workflow failed: {exc}")
+
+with tabs[9]:
     st.subheader("Research report")
     notes = st.text_area(
         "Scientist notes",
@@ -947,7 +1052,7 @@ with tabs[8]:
         )
         st.markdown(report)
 
-with tabs[9]:
+with tabs[10]:
     st.subheader("Chemist guide")
     st.markdown("""
 You do **not** need to be an AI engineer. Your main job is to create trustworthy spectra.

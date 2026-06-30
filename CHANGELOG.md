@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.7.0 - Molecular and Multimodal AI
+
+- Added Molecular + Multimodal AI tab.
+- Added optional RDKit-aware SMILES descriptors and Morgan fingerprints.
+- Added deterministic fallback molecular features so the app remains usable without RDKit.
+- Added molecular metadata template support for `sample_id` and `smiles`.
+- Added early-fusion spectral + molecular ML matrix export.
+- Added fusion block summaries for spectral, molecular, and fused features.
+- Added `narcoticsense.molecular` and `narcoticsense.fusion` modules.
+- Added tests for molecular descriptors, fingerprints, sample alignment, and early fusion.
+
 ## v0.6.0 - Explainability, Uncertainty, and Robust Validation
 
 - Added Trustworthy AI tab.

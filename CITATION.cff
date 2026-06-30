@@ -3,6 +3,11 @@ title: NarcoticSense AI
 message: If you use this software, please cite it.
 type: software
 authors:
-  - name: NarcoticSense AI Contributors
-version: 0.6.0
+  - family-names: Karmakar
+    given-names: Joy
+    affiliation: DyeMind
+    orcid: https://orcid.org/0000-0002-8232-5639
+repository-code: https://github.com/drjoykarmakar/NarcoticSense-AI
+url: https://github.com/drjoykarmakar/NarcoticSense-AI
+version: 0.7.0
 license: Apache-2.0

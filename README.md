@@ -38,6 +38,15 @@ python3 -m pip install -e ".[dev]"
 python3 -m pytest
 ```
 
+
+New in v0.2.0:
+- Dataset quality checks for uploaded spectra.
+- Optional metadata CSV upload with sample labels/classes.
+- Spectral library matching by similarity.
+- PLS-DA exploratory projections when labels are available.
+- Cross-validated supervised ML baseline using Random Forest or SVM.
+- Extra unit tests for quality control, library matching, and ML evaluation.
+
 ## Current features
 
 - Universal spectroscopy importer for common CSV/TXT/TSV vendor-like exports.

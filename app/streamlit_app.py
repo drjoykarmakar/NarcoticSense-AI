@@ -12,11 +12,14 @@ import pandas as pd
 import streamlit as st
 
 try:
-    from narcoticsense.chemometrics import run_kmeans, run_pca, run_tsne
+    from narcoticsense.chemometrics import run_kmeans, run_pca, run_pls_da, run_tsne
+    from narcoticsense.classical_ml import evaluate_classifier
     from narcoticsense.feature_engineering import derivative_spectrum, peak_table, spectral_metrics
+    from narcoticsense.library import library_match
     from narcoticsense.preprocessing import PreprocessingPipeline
     from narcoticsense.reports import make_markdown_report
     from narcoticsense.spectroscopy import align_spectra, dataset_summary, import_spectrum
+    from narcoticsense.validation import dataset_quality_report
     from narcoticsense.visualization import plot_overlay, plot_peaks, plot_projection, plot_spectrum
 except Exception as exc:
     st.set_page_config(page_title="NarcoticSense AI setup error", page_icon="🔬")
@@ -41,6 +44,8 @@ if "processed" not in st.session_state:
     st.session_state.processed = []
 if "import_results" not in st.session_state:
     st.session_state.import_results = []
+if "metadata" not in st.session_state:
+    st.session_state.metadata = pd.DataFrame()
 
 with st.sidebar:
     st.header("Project")
@@ -64,6 +69,7 @@ with st.sidebar:
         st.session_state.spectra = []
         st.session_state.processed = []
         st.session_state.import_results = []
+        st.session_state.metadata = pd.DataFrame()
         st.rerun()
 
 pipe = PreprocessingPipeline(
@@ -81,8 +87,9 @@ tabs = st.tabs(
         "3 Spectra Viewer",
         "4 Peak Analysis",
         "5 Chemometrics",
-        "6 AI Training Plan",
-        "7 Report",
+        "6 Library Match",
+        "7 Supervised ML",
+        "8 Report",
         "Chemist Guide",
     ]
 )
@@ -186,6 +193,25 @@ with tabs[1]:
             file_name="metadata_template.csv",
             mime="text/csv",
         )
+        st.markdown("### Dataset quality checks")
+        quality = dataset_quality_report(st.session_state.processed)
+        st.dataframe(quality, use_container_width=True)
+        metadata_file = st.file_uploader(
+            "Optional: upload completed metadata CSV with sample_id and compound_or_class columns",
+            type=["csv"],
+            key="metadata_upload",
+        )
+        if metadata_file is not None:
+            try:
+                metadata = pd.read_csv(metadata_file)
+                if "sample_id" not in metadata.columns:
+                    st.error("Metadata file must contain a sample_id column.")
+                else:
+                    st.session_state.metadata = metadata
+                    st.success(f"Loaded metadata for {len(metadata)} rows.")
+                    st.dataframe(metadata, use_container_width=True)
+            except Exception as exc:
+                st.error(f"Could not read metadata CSV: {exc}")
 
 with tabs[2]:
     st.subheader("Professional spectra viewer")
@@ -327,6 +353,33 @@ with tabs[4]:
                 st.dataframe(clusters, use_container_width=True)
             except Exception as exc:
                 st.info(f"Clustering skipped: {exc}")
+        if (
+            not st.session_state.metadata.empty
+            and "compound_or_class" in st.session_state.metadata.columns
+        ):
+            labels_frame = pd.DataFrame({"sample_id": aligned.sample_ids}).merge(
+                st.session_state.metadata[["sample_id", "compound_or_class"]],
+                on="sample_id",
+                how="left",
+            )
+            labels = labels_frame["compound_or_class"].fillna("").astype(str).tolist()
+            if len(set([label for label in labels if label])) >= 2:
+                try:
+                    plsda = run_pls_da(aligned.matrix, aligned.sample_ids, labels, n_components=2)
+                    st.plotly_chart(
+                        plot_projection(
+                            plsda.coordinates, "LV1", "LV2", "PLS-DA exploratory score plot"
+                        ),
+                        use_container_width=True,
+                    )
+                    st.download_button(
+                        "Download PLS-DA scores",
+                        plsda.coordinates.to_csv(index=False),
+                        file_name="pls_da_scores.csv",
+                        mime="text/csv",
+                    )
+                except Exception as exc:
+                    st.info(f"PLS-DA skipped: {exc}")
         st.download_button(
             "Download aligned ML matrix",
             aligned.to_dataframe().to_csv(index=False),
@@ -335,7 +388,34 @@ with tabs[4]:
         )
 
 with tabs[5]:
-    st.subheader("No-code AI training plan")
+    st.subheader("Spectral library matching")
+    if len(st.session_state.processed) < 2:
+        st.info(
+            "Import at least two spectra. Select one as the unknown/query and use the others as references."
+        )
+    else:
+        query_id = st.selectbox(
+            "Query spectrum", [s.sample_id for s in st.session_state.processed], key="library_query"
+        )
+        top_k = st.slider(
+            "Top matches",
+            1,
+            min(10, len(st.session_state.processed) - 1),
+            min(5, len(st.session_state.processed) - 1),
+        )
+        query = next(s for s in st.session_state.processed if s.sample_id == query_id)
+        refs = [s for s in st.session_state.processed if s.sample_id != query_id]
+        matches = library_match(query, refs, top_k=top_k)
+        st.dataframe(matches, use_container_width=True)
+        st.download_button(
+            "Download library matches",
+            matches.to_csv(index=False),
+            file_name=f"{query_id}_library_matches.csv",
+            mime="text/csv",
+        )
+
+with tabs[6]:
+    st.subheader("Supervised ML and dataset planning")
     st.info(
         "This tab tells you exactly what to collect before supervised AI is scientifically meaningful."
     )
@@ -357,8 +437,45 @@ Recommended order:
 
 Start with PCA/PLS/random forest/SVM. Use CNNs or transformers only after the dataset is large and independently validated.
 """)
+    if len(st.session_state.processed) >= 4 and not st.session_state.metadata.empty:
+        st.markdown("### Cross-validated supervised baseline")
+        label_col = st.selectbox(
+            "Label column",
+            [c for c in st.session_state.metadata.columns if c != "sample_id"],
+            index=0,
+        )
+        model_name = st.selectbox("Baseline model", ["Random Forest", "SVM RBF"])
+        n_points_ml = st.slider("ML grid points", 100, 2000, 500, step=100, key="ml_grid")
+        aligned_ml = align_spectra(st.session_state.processed, n_points=n_points_ml)
+        joined = pd.DataFrame({"sample_id": aligned_ml.sample_ids}).merge(
+            st.session_state.metadata[["sample_id", label_col]], on="sample_id", how="left"
+        )
+        keep = joined[label_col].notna() & (joined[label_col].astype(str).str.len() > 0)
+        if keep.sum() < 4 or joined.loc[keep, label_col].nunique() < 2:
+            st.warning("Need at least two classes and enough labeled spectra for cross-validation.")
+        else:
+            try:
+                result = evaluate_classifier(
+                    aligned_ml.matrix[keep.to_numpy()],
+                    joined.loc[keep, label_col].astype(str).tolist(),
+                    joined.loc[keep, "sample_id"].astype(str).tolist(),
+                    model_name=model_name,
+                )
+                st.dataframe(result.metrics, use_container_width=True)
+                st.markdown("Confusion matrix")
+                st.dataframe(result.confusion, use_container_width=True)
+                st.markdown("Predictions")
+                st.dataframe(result.predictions, use_container_width=True)
+                st.download_button(
+                    "Download ML predictions",
+                    result.predictions.to_csv(index=False),
+                    file_name="ml_predictions.csv",
+                    mime="text/csv",
+                )
+            except Exception as exc:
+                st.info(f"Supervised baseline skipped: {exc}")
 
-with tabs[6]:
+with tabs[7]:
     st.subheader("Research report")
     notes = st.text_area(
         "Scientist notes",
@@ -400,7 +517,7 @@ with tabs[6]:
         )
         st.markdown(report)
 
-with tabs[7]:
+with tabs[8]:
     st.subheader("Chemist guide")
     st.markdown("""
 You do **not** need to be an AI engineer. Your main job is to create trustworthy spectra.

@@ -51,3 +51,33 @@ def run_kmeans(matrix: np.ndarray, sample_ids: list[str], *, n_clusters: int = 2
     scaled = StandardScaler().fit_transform(matrix)
     labels = KMeans(n_clusters=n_clusters, n_init="auto", random_state=42).fit_predict(scaled)
     return pd.DataFrame({"sample_id": sample_ids, "cluster": labels.astype(int)})
+
+
+def run_pls_da(
+    matrix: np.ndarray, sample_ids: list[str], labels: list[str], *, n_components: int = 2
+) -> ProjectionResult:
+    """Run a simple PLS-DA style projection using one-hot labels.
+
+    This is intended for exploratory visualization, not regulatory decision-making.
+    """
+    from sklearn.cross_decomposition import PLSRegression
+    from sklearn.preprocessing import LabelBinarizer
+
+    if len(set(labels)) < 2:
+        raise ValueError("PLS-DA needs at least two classes.")
+    n_components = min(n_components, matrix.shape[0] - 1, matrix.shape[1])
+    if n_components < 1:
+        raise ValueError("Not enough samples/features for PLS-DA.")
+    scaled = StandardScaler().fit_transform(matrix)
+    y = LabelBinarizer().fit_transform(labels)
+    if y.ndim == 1:
+        y = y.reshape(-1, 1)
+    pls = PLSRegression(n_components=n_components)
+    coords = pls.fit_transform(scaled, y)[0]
+    coord_df = pd.DataFrame(coords, columns=[f"LV{i+1}" for i in range(n_components)])
+    coord_df.insert(0, "sample_id", sample_ids)
+    coord_df.insert(1, "label", labels)
+    loadings = pd.DataFrame({"variable_index": np.arange(matrix.shape[1])})
+    for i in range(n_components):
+        loadings[f"LV{i+1}_x_weight"] = pls.x_weights_[:, i]
+    return ProjectionResult(coord_df, [], loadings)

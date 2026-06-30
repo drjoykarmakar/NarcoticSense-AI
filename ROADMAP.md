@@ -21,7 +21,7 @@
 - Dataset metadata editor.
 - Project save/load.
 
-## v0.3.0: Chemometrics
+## v0.3.0 - completed: Chemometrics
 
 - PLS and PLS-DA.
 - LDA and SIMCA.

@@ -1,23 +1,8 @@
 cff-version: 1.2.0
-
-title: "NarcoticSense AI"
-
-message: "If you use this software, please cite it."
-
+title: NarcoticSense AI
+message: If you use this software, please cite it.
 type: software
-
 authors:
-  - family-names: "Karmakar"
-    given-names: "Joy"
-    affiliation: "DyeMind"
-    orcid: "https://orcid.org/0000-0002-8232-5639"
-
-repository-code: "https://github.com/drjoykarmakar/NarcoticSense-AI"
-
-repository-artifact: "https://github.com/drjoykarmakar/NarcoticSense-AI/releases"
-
-url: "https://github.com/drjoykarmakar/NarcoticSense-AI"
-
+  - name: NarcoticSense AI Contributors
+version: 0.3.0
 license: Apache-2.0
-
-version: 0.2.0

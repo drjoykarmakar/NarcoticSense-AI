@@ -39,6 +39,16 @@ python3 -m pytest
 ```
 
 
+New in v0.3.0:
+
+- Professional spectroscopy engine upgrades.
+- Baseline method selector: AsLS, airPLS, and arPLS.
+- Peak FWHM in spectral x-axis units.
+- Peak integration over FWHM windows.
+- Batch export of all processed spectra in long CSV format.
+- Interactive Plotly HTML figure export for overlays and derivatives.
+- Preprocessing history metadata for reproducibility.
+
 New in v0.2.0:
 - Dataset quality checks for uploaded spectra.
 - Optional metadata CSV upload with sample labels/classes.
@@ -55,8 +65,8 @@ New in v0.2.0:
 - Multi-file upload.
 - Dataset manager and metadata template export.
 - Raw, processed, overlay, and derivative spectra viewer.
-- Baseline correction, smoothing, and normalization.
-- Peak table and spectral metrics.
+- Baseline correction using AsLS/airPLS/arPLS, smoothing, and normalization.
+- Peak table, FWHM, peak integration, and spectral metrics.
 - PCA, t-SNE, and K-means chemometrics.
 - Aligned spectral matrix export for future ML.
 - AI dataset planning tab.
@@ -119,32 +129,6 @@ python3 -m ruff check src tests app
 python3 -m black --check src tests app
 python3 -m pytest -q
 ```
-
-## Author
-
-**Dr. Joy Karmakar**
-
-Founder and Principal Developer, **NarcoticSense AI**
-
-Founder, **DyeMind**
-
-🌐 https://www.dyemind.com
-
-ORCID:
-https://orcid.org/0000-0002-8232-5639
-
-GitHub:
-https://github.com/drjoykarmakar
-
-Research Interests
-
-- AI-assisted spectroscopy
-- Fluorescence spectroscopy
-- Raman spectroscopy
-- Chemometrics
-- Analytical chemistry
-- Molecular sensing
-- Intelligent sensor development
 
 ## License
 

@@ -18,7 +18,12 @@ try:
     from narcoticsense.library import library_match
     from narcoticsense.preprocessing import PreprocessingPipeline
     from narcoticsense.reports import make_markdown_report
-    from narcoticsense.spectroscopy import align_spectra, dataset_summary, import_spectrum
+    from narcoticsense.spectroscopy import (
+        align_spectra,
+        dataset_summary,
+        import_spectrum,
+        spectra_to_long_dataframe,
+    )
     from narcoticsense.validation import dataset_quality_report
     from narcoticsense.visualization import plot_overlay, plot_peaks, plot_projection, plot_spectrum
 except Exception as exc:
@@ -60,6 +65,13 @@ with st.sidebar:
     st.header("Preprocessing")
     smooth = st.checkbox("Savitzky-Golay smoothing", value=True)
     baseline = st.checkbox("Baseline correction", value=True)
+    baseline_method = st.selectbox("Baseline method", ["asls", "airpls", "arpls"], index=0)
+    baseline_lambda = st.select_slider(
+        "Baseline stiffness λ",
+        options=[1e3, 1e4, 1e5, 1e6, 1e7],
+        value=1e5,
+        format_func=lambda v: f"{v:.0e}",
+    )
     normalization = st.selectbox("Normalization", ["minmax", "snv", "none"], index=0)
     window_length = st.slider("Smoothing window", 5, 51, 11, step=2)
     polyorder = st.slider("Polynomial order", 2, 5, 3)
@@ -78,6 +90,8 @@ pipe = PreprocessingPipeline(
     normalization=normalization,
     window_length=window_length,
     polyorder=polyorder,
+    baseline_method=baseline_method,
+    baseline_lambda=float(baseline_lambda),
 )
 
 tabs = st.tabs(
@@ -229,23 +243,36 @@ with tabs[2]:
                 "Select spectrum", [s.sample_id for s in st.session_state.spectra]
             )
             idx = [s.sample_id for s in st.session_state.spectra].index(selected)
-            st.plotly_chart(
-                plot_overlay(
-                    [st.session_state.spectra[idx], st.session_state.processed[idx]],
-                    title=f"Raw vs processed: {selected}",
-                ),
-                use_container_width=True,
+            fig = plot_overlay(
+                [st.session_state.spectra[idx], st.session_state.processed[idx]],
+                title=f"Raw vs processed: {selected}",
+            )
+            st.plotly_chart(fig, use_container_width=True)
+            st.download_button(
+                "Download interactive figure HTML",
+                fig.to_html(include_plotlyjs="cdn"),
+                file_name=f"{selected}_raw_vs_processed.html",
+                mime="text/html",
             )
         elif view_choice == "Derivative":
             order = st.radio("Derivative order", [1, 2], horizontal=True)
             deriv = [derivative_spectrum(s, order=order) for s in st.session_state.processed]
-            st.plotly_chart(
-                plot_overlay(deriv, title=f"{order} derivative overlay"), use_container_width=True
+            fig = plot_overlay(deriv, title=f"{order} derivative overlay")
+            st.plotly_chart(fig, use_container_width=True)
+            st.download_button(
+                "Download interactive derivative HTML",
+                fig.to_html(include_plotlyjs="cdn"),
+                file_name=f"derivative_order_{order}.html",
+                mime="text/html",
             )
         else:
-            st.plotly_chart(
-                plot_overlay(spectra_to_plot, title=f"{view_choice} spectral overlay"),
-                use_container_width=True,
+            fig = plot_overlay(spectra_to_plot, title=f"{view_choice} spectral overlay")
+            st.plotly_chart(fig, use_container_width=True)
+            st.download_button(
+                "Download interactive overlay HTML",
+                fig.to_html(include_plotlyjs="cdn"),
+                file_name=f"{view_choice.lower()}_spectral_overlay.html",
+                mime="text/html",
             )
         if st.session_state.processed:
             selected = st.selectbox(
@@ -267,6 +294,12 @@ with tabs[2]:
                 "Download selected processed CSV",
                 out.to_csv(index=False),
                 file_name=f"{selected}_processed.csv",
+                mime="text/csv",
+            )
+            st.download_button(
+                "Download all processed spectra long CSV",
+                spectra_to_long_dataframe(st.session_state.processed).to_csv(index=False),
+                file_name="all_processed_spectra_long.csv",
                 mime="text/csv",
             )
 
@@ -498,6 +531,8 @@ with tabs[7]:
             "normalization": normalization,
             "window_length": window_length,
             "polyorder": polyorder,
+            "baseline_method": baseline_method,
+            "baseline_lambda": float(baseline_lambda),
             "peak_prominence": prominence,
         }
         report = make_markdown_report(

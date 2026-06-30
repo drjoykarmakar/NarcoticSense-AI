@@ -23,6 +23,18 @@ class SupervisedResult:
     metrics: pd.DataFrame
     confusion: pd.DataFrame
     report: pd.DataFrame
+    probabilities: pd.DataFrame | None = None
+
+
+def _make_estimator(model_name: str):
+    if model_name.lower().startswith("svm"):
+        return Pipeline(
+            [
+                ("scaler", StandardScaler()),
+                ("clf", SVC(kernel="rbf", probability=True, class_weight="balanced")),
+            ]
+        )
+    return RandomForestClassifier(n_estimators=300, random_state=42, class_weight="balanced")
 
 
 def evaluate_classifier(
@@ -34,25 +46,17 @@ def evaluate_classifier(
     cv: int = 3,
 ) -> SupervisedResult:
     """Cross-validated supervised baseline for aligned spectra."""
-    y = np.asarray(labels)
+    y = np.asarray(labels, dtype=str)
     unique, counts = np.unique(y, return_counts=True)
     if unique.size < 2:
         raise ValueError("At least two labels/classes are required.")
     min_count = int(np.min(counts))
     cv = max(2, min(int(cv), min_count))
-    if model_name.lower().startswith("svm"):
-        estimator = Pipeline(
-            [
-                ("scaler", StandardScaler()),
-                ("clf", SVC(kernel="rbf", probability=False, class_weight="balanced")),
-            ]
-        )
-    else:
-        estimator = RandomForestClassifier(
-            n_estimators=300, random_state=42, class_weight="balanced"
-        )
+    estimator = _make_estimator(model_name)
     splitter = StratifiedKFold(n_splits=cv, shuffle=True, random_state=42)
     pred = cross_val_predict(estimator, matrix, y, cv=splitter)
+    prob = cross_val_predict(estimator, matrix, y, cv=splitter, method="predict_proba")
+    classes = sorted(map(str, unique.tolist()))
     metrics = pd.DataFrame(
         [
             {"metric": "accuracy", "value": float(accuracy_score(y, pred))},
@@ -60,7 +64,6 @@ def evaluate_classifier(
             {"metric": "cv_folds", "value": float(cv)},
         ]
     )
-    classes = sorted(map(str, unique.tolist()))
     confusion = pd.DataFrame(
         confusion_matrix(y, pred, labels=classes), index=classes, columns=classes
     )
@@ -68,8 +71,21 @@ def evaluate_classifier(
         classification_report(y, pred, output_dict=True, zero_division=0)
     ).T.reset_index(names="class")
     predictions = pd.DataFrame(
-        {"sample_id": sample_ids, "true_label": y, "predicted_label": pred, "correct": y == pred}
+        {
+            "sample_id": sample_ids,
+            "true_label": y,
+            "predicted_label": pred,
+            "correct": y == pred,
+            "confidence": np.max(prob, axis=1),
+        }
     )
+    probabilities = pd.DataFrame(prob, columns=[f"prob_{c}" for c in classes])
+    probabilities.insert(0, "sample_id", sample_ids)
+    probabilities.insert(1, "true_label", y)
     return SupervisedResult(
-        predictions=predictions, metrics=metrics, confusion=confusion, report=report
+        predictions=predictions,
+        metrics=metrics,
+        confusion=confusion,
+        report=report,
+        probabilities=probabilities,
     )

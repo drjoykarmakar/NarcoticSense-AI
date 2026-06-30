@@ -39,6 +39,14 @@ python3 -m pytest
 ```
 
 
+
+New in v0.4.0:
+
+- Expanded chemometrics: PLS regression, LDA, SIMCA-style one-class PCA, HCA, and UMAP/PCA manifold mapping.
+- Validation tables for supervised ML: class probabilities, reliability/calibration, ROC, and precision-recall exports.
+- Distance matrix export for spectral similarity and outlier inspection.
+- Additional tests for chemometrics, regression, validation, and probability outputs.
+
 New in v0.3.0:
 
 - Professional spectroscopy engine upgrades.
@@ -53,8 +61,8 @@ New in v0.2.0:
 - Dataset quality checks for uploaded spectra.
 - Optional metadata CSV upload with sample labels/classes.
 - Spectral library matching by similarity.
-- PLS-DA exploratory projections when labels are available.
-- Cross-validated supervised ML baseline using Random Forest or SVM.
+- PLS-DA, LDA, SIMCA-style class modeling, and PLS regression when metadata are available.
+- Cross-validated supervised ML baseline using Random Forest or SVM with probability, calibration, ROC, and PR validation exports.
 - Extra unit tests for quality control, library matching, and ML evaluation.
 
 ## Current features

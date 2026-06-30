@@ -1,3 +1,16 @@
+
+## v0.4.0 - Chemometrics and Validation Expansion
+
+- Added PLS regression for concentration/response modeling.
+- Added LDA score projections.
+- Added SIMCA-style one-class PCA class modeling.
+- Added hierarchical clustering linkage export.
+- Added optional UMAP with PCA fallback when umap-learn is not installed.
+- Added spectral distance matrix export.
+- Added probability outputs for Random Forest and SVM baselines.
+- Added reliability/calibration, ROC, and precision-recall validation tables.
+- Expanded unit tests to cover v0.4.0 chemometrics and validation behavior.
+
 # Changelog
 
 ## v0.3.0

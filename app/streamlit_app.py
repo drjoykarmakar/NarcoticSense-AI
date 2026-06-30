@@ -12,7 +12,18 @@ import pandas as pd
 import streamlit as st
 
 try:
-    from narcoticsense.chemometrics import run_kmeans, run_pca, run_pls_da, run_tsne
+    from narcoticsense.chemometrics import (
+        distance_matrix,
+        run_hca,
+        run_kmeans,
+        run_lda,
+        run_pca,
+        run_pls_da,
+        run_pls_regression,
+        run_simca,
+        run_tsne,
+        run_umap,
+    )
     from narcoticsense.classical_ml import evaluate_classifier
     from narcoticsense.feature_engineering import derivative_spectrum, peak_table, spectral_metrics
     from narcoticsense.library import library_match
@@ -24,7 +35,11 @@ try:
         import_spectrum,
         spectra_to_long_dataframe,
     )
-    from narcoticsense.validation import dataset_quality_report
+    from narcoticsense.validation import (
+        binary_roc_pr_tables,
+        dataset_quality_report,
+        reliability_table,
+    )
     from narcoticsense.visualization import plot_overlay, plot_peaks, plot_projection, plot_spectrum
 except Exception as exc:
     st.set_page_config(page_title="NarcoticSense AI setup error", page_icon="🔬")
@@ -345,58 +360,118 @@ with tabs[3]:
         )
 
 with tabs[4]:
-    st.subheader("Chemometrics")
+    st.subheader("Chemometrics and validation")
     if len(st.session_state.processed) < 2:
-        st.info("Import at least two spectra for PCA. Four or more are recommended for t-SNE.")
+        st.info("Import at least two spectra for PCA. Four or more are recommended for t-SNE/UMAP.")
     else:
         n_points = st.slider("Common grid points", 100, 3000, 1000, step=100)
         aligned = align_spectra(st.session_state.processed, n_points=n_points)
         st.write(
             f"Aligned dataset: {aligned.n_samples} spectra × {aligned.n_features} spectral variables."
         )
-        pca = run_pca(aligned.matrix, aligned.sample_ids, aligned.x, n_components=3)
-        ev = [round(v * 100, 2) for v in pca.explained_variance]
-        st.write(f"PCA explained variance: {ev}%")
-        st.plotly_chart(
-            plot_projection(pca.coordinates, "PC1", "PC2", "PCA score plot"),
-            use_container_width=True,
+        st.download_button(
+            "Download aligned ML matrix",
+            aligned.to_dataframe().to_csv(index=False),
+            file_name="aligned_spectral_matrix.csv",
+            mime="text/csv",
         )
-        st.dataframe(pca.coordinates, use_container_width=True)
-        if pca.loadings is not None:
-            st.line_chart(pca.loadings.set_index("x"))
-            st.download_button(
-                "Download PCA loadings",
-                pca.loadings.to_csv(index=False),
-                file_name="pca_loadings.csv",
-                mime="text/csv",
+
+        pca_tab, cluster_tab, supervised_tab, regression_tab, outlier_tab = st.tabs(
+            [
+                "PCA/Manifold",
+                "Clustering",
+                "PLS-DA/LDA/SIMCA",
+                "PLS Regression",
+                "Distance/Outliers",
+            ]
+        )
+
+        with pca_tab:
+            pca = run_pca(aligned.matrix, aligned.sample_ids, aligned.x, n_components=3)
+            ev = [round(v * 100, 2) for v in pca.explained_variance]
+            st.write(f"PCA explained variance: {ev}%")
+            st.plotly_chart(
+                plot_projection(pca.coordinates, "PC1", "PC2", "PCA score plot"),
+                use_container_width=True,
             )
-        if aligned.n_samples >= 4:
-            try:
-                tsne_df = run_tsne(aligned.matrix, aligned.sample_ids)
-                st.plotly_chart(
-                    plot_projection(tsne_df, "TSNE1", "TSNE2", "t-SNE exploratory map"),
-                    use_container_width=True,
+            st.dataframe(pca.coordinates, use_container_width=True)
+            if pca.loadings is not None:
+                st.line_chart(pca.loadings.set_index("x"))
+                st.download_button(
+                    "Download PCA loadings",
+                    pca.loadings.to_csv(index=False),
+                    file_name="pca_loadings.csv",
+                    mime="text/csv",
                 )
-            except Exception as exc:
-                st.info(f"t-SNE skipped: {exc}")
-        if aligned.n_samples >= 2:
-            k = st.slider("K-means clusters", 2, min(8, aligned.n_samples), 2)
-            try:
-                clusters = run_kmeans(aligned.matrix, aligned.sample_ids, n_clusters=k)
-                st.dataframe(clusters, use_container_width=True)
-            except Exception as exc:
-                st.info(f"Clustering skipped: {exc}")
-        if (
-            not st.session_state.metadata.empty
-            and "compound_or_class" in st.session_state.metadata.columns
-        ):
-            labels_frame = pd.DataFrame({"sample_id": aligned.sample_ids}).merge(
-                st.session_state.metadata[["sample_id", "compound_or_class"]],
-                on="sample_id",
-                how="left",
-            )
-            labels = labels_frame["compound_or_class"].fillna("").astype(str).tolist()
-            if len(set([label for label in labels if label])) >= 2:
+            if aligned.n_samples >= 4:
+                try:
+                    tsne_df = run_tsne(aligned.matrix, aligned.sample_ids)
+                    st.plotly_chart(
+                        plot_projection(tsne_df, "TSNE1", "TSNE2", "t-SNE exploratory map"),
+                        use_container_width=True,
+                    )
+                except Exception as exc:
+                    st.info(f"t-SNE skipped: {exc}")
+            if aligned.n_samples >= 3:
+                try:
+                    umap_df = run_umap(aligned.matrix, aligned.sample_ids)
+                    st.plotly_chart(
+                        plot_projection(umap_df, "UMAP1", "UMAP2", "UMAP/PCA manifold map"),
+                        use_container_width=True,
+                    )
+                    st.caption(str(umap_df["method"].iloc[0]))
+                    st.download_button(
+                        "Download UMAP/manifold scores",
+                        umap_df.to_csv(index=False),
+                        file_name="umap_scores.csv",
+                        mime="text/csv",
+                    )
+                except Exception as exc:
+                    st.info(f"UMAP skipped: {exc}")
+
+        with cluster_tab:
+            if aligned.n_samples >= 2:
+                k = st.slider("K-means clusters", 2, min(8, aligned.n_samples), 2)
+                try:
+                    clusters = run_kmeans(aligned.matrix, aligned.sample_ids, n_clusters=k)
+                    st.dataframe(clusters, use_container_width=True)
+                except Exception as exc:
+                    st.info(f"K-means skipped: {exc}")
+                try:
+                    hca = run_hca(aligned.matrix, aligned.sample_ids)
+                    st.markdown("Hierarchical clustering linkage table")
+                    st.dataframe(hca, use_container_width=True)
+                    st.download_button(
+                        "Download HCA linkage table",
+                        hca.to_csv(index=False),
+                        file_name="hca_linkage.csv",
+                        mime="text/csv",
+                    )
+                except Exception as exc:
+                    st.info(f"HCA skipped: {exc}")
+
+        labels = None
+        label_col = None
+        if not st.session_state.metadata.empty and "sample_id" in st.session_state.metadata.columns:
+            candidate_cols = [c for c in st.session_state.metadata.columns if c != "sample_id"]
+            if candidate_cols:
+                label_col = st.selectbox(
+                    "Classification label column",
+                    candidate_cols,
+                    index=0,
+                    key="chemometrics_label_col",
+                )
+                labels_frame = pd.DataFrame({"sample_id": aligned.sample_ids}).merge(
+                    st.session_state.metadata[["sample_id", label_col]],
+                    on="sample_id",
+                    how="left",
+                )
+                labels = labels_frame[label_col].fillna("").astype(str).tolist()
+
+        with supervised_tab:
+            if labels is None or len(set([label for label in labels if label])) < 2:
+                st.info("Upload metadata with at least two classes to run PLS-DA, LDA, and SIMCA.")
+            else:
                 try:
                     plsda = run_pls_da(aligned.matrix, aligned.sample_ids, labels, n_components=2)
                     st.plotly_chart(
@@ -413,12 +488,98 @@ with tabs[4]:
                     )
                 except Exception as exc:
                     st.info(f"PLS-DA skipped: {exc}")
-        st.download_button(
-            "Download aligned ML matrix",
-            aligned.to_dataframe().to_csv(index=False),
-            file_name="aligned_spectral_matrix.csv",
-            mime="text/csv",
-        )
+                try:
+                    lda = run_lda(aligned.matrix, aligned.sample_ids, labels)
+                    y_axis = "LD2" if "LD2" in lda.coordinates.columns else "LD1"
+                    st.plotly_chart(
+                        plot_projection(lda.coordinates, "LD1", y_axis, "LDA score plot"),
+                        use_container_width=True,
+                    )
+                    st.download_button(
+                        "Download LDA scores",
+                        lda.coordinates.to_csv(index=False),
+                        file_name="lda_scores.csv",
+                        mime="text/csv",
+                    )
+                except Exception as exc:
+                    st.info(f"LDA skipped: {exc}")
+                try:
+                    simca = run_simca(aligned.matrix, aligned.sample_ids, labels)
+                    st.markdown("SIMCA-style one-class PCA results")
+                    st.dataframe(simca.metrics, use_container_width=True)
+                    st.dataframe(simca.predictions, use_container_width=True)
+                    st.download_button(
+                        "Download SIMCA predictions",
+                        simca.predictions.to_csv(index=False),
+                        file_name="simca_predictions.csv",
+                        mime="text/csv",
+                    )
+                except Exception as exc:
+                    st.info(f"SIMCA skipped: {exc}")
+
+        with regression_tab:
+            if (
+                st.session_state.metadata.empty
+                or "sample_id" not in st.session_state.metadata.columns
+            ):
+                st.info(
+                    "Upload metadata with a numeric concentration/response column for PLS regression."
+                )
+            else:
+                numeric_cols = []
+                for c in st.session_state.metadata.columns:
+                    if c == "sample_id":
+                        continue
+                    values = pd.to_numeric(st.session_state.metadata[c], errors="coerce")
+                    if values.notna().sum() >= 3:
+                        numeric_cols.append(c)
+                if not numeric_cols:
+                    st.info("No numeric metadata column with at least three values was found.")
+                else:
+                    target_col = st.selectbox("PLS regression target", numeric_cols)
+                    joined = pd.DataFrame({"sample_id": aligned.sample_ids}).merge(
+                        st.session_state.metadata[["sample_id", target_col]],
+                        on="sample_id",
+                        how="left",
+                    )
+                    y_numeric = pd.to_numeric(joined[target_col], errors="coerce")
+                    keep = y_numeric.notna().to_numpy()
+                    if keep.sum() < 3:
+                        st.warning("Need at least three numeric target values.")
+                    else:
+                        n_comp = st.slider("PLS components", 1, min(10, int(keep.sum()) - 1), 2)
+                        try:
+                            pls = run_pls_regression(
+                                aligned.matrix[keep],
+                                joined.loc[keep, "sample_id"].astype(str).tolist(),
+                                y_numeric.loc[keep].astype(float).tolist(),
+                                n_components=n_comp,
+                            )
+                            st.dataframe(pls.metrics, use_container_width=True)
+                            st.dataframe(pls.predictions, use_container_width=True)
+                            st.line_chart(pls.coefficients.set_index("variable_index"))
+                            st.download_button(
+                                "Download PLS regression predictions",
+                                pls.predictions.to_csv(index=False),
+                                file_name="pls_regression_predictions.csv",
+                                mime="text/csv",
+                            )
+                        except Exception as exc:
+                            st.info(f"PLS regression skipped: {exc}")
+
+        with outlier_tab:
+            try:
+                distances = distance_matrix(aligned.matrix, aligned.sample_ids)
+                st.markdown("Scaled spectral distance matrix")
+                st.dataframe(distances, use_container_width=True)
+                st.download_button(
+                    "Download distance matrix",
+                    distances.to_csv(),
+                    file_name="spectral_distance_matrix.csv",
+                    mime="text/csv",
+                )
+            except Exception as exc:
+                st.info(f"Distance matrix skipped: {exc}")
 
 with tabs[5]:
     st.subheader("Spectral library matching")
@@ -497,8 +658,30 @@ Start with PCA/PLS/random forest/SVM. Use CNNs or transformers only after the da
                 st.dataframe(result.metrics, use_container_width=True)
                 st.markdown("Confusion matrix")
                 st.dataframe(result.confusion, use_container_width=True)
+                st.markdown("Classification report")
+                st.dataframe(result.report, use_container_width=True)
                 st.markdown("Predictions")
                 st.dataframe(result.predictions, use_container_width=True)
+                if result.probabilities is not None:
+                    classes = sorted(joined.loc[keep, label_col].astype(str).unique().tolist())
+                    prob_values = result.probabilities[[f"prob_{c}" for c in classes]].to_numpy()
+                    reliability = reliability_table(
+                        joined.loc[keep, label_col].astype(str).tolist(), prob_values, classes
+                    )
+                    st.markdown("Reliability / calibration table")
+                    st.dataframe(reliability, use_container_width=True)
+                    curves = binary_roc_pr_tables(
+                        joined.loc[keep, label_col].astype(str).tolist(), prob_values, classes
+                    )
+                    if curves:
+                        curve_name = st.selectbox("Validation curve", list(curves.keys()))
+                        st.dataframe(curves[curve_name], use_container_width=True)
+                    st.download_button(
+                        "Download class probabilities",
+                        result.probabilities.to_csv(index=False),
+                        file_name="ml_probabilities.csv",
+                        mime="text/csv",
+                    )
                 st.download_button(
                     "Download ML predictions",
                     result.predictions.to_csv(index=False),

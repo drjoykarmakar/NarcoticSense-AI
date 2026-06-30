@@ -1,5 +1,5 @@
 
-## v0.4.0 - Chemometrics and Validation Expansion
+## v0.5.0 - Chemometrics and Validation Expansion
 
 - Added PLS regression for concentration/response modeling.
 - Added LDA score projections.
@@ -9,7 +9,7 @@
 - Added spectral distance matrix export.
 - Added probability outputs for Random Forest and SVM baselines.
 - Added reliability/calibration, ROC, and precision-recall validation tables.
-- Expanded unit tests to cover v0.4.0 chemometrics and validation behavior.
+- Expanded unit tests to cover v0.5.0 chemometrics and validation behavior.
 
 # Changelog
 

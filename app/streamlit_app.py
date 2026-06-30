@@ -24,9 +24,15 @@ try:
         run_tsne,
         run_umap,
     )
-    from narcoticsense.classical_ml import evaluate_classifier
     from narcoticsense.feature_engineering import derivative_spectrum, peak_table, spectral_metrics
     from narcoticsense.library import library_match
+    from narcoticsense.models import (
+        available_classification_models,
+        available_regression_models,
+        save_model_bundle,
+        train_classification_model,
+        train_regression_model,
+    )
     from narcoticsense.preprocessing import PreprocessingPipeline
     from narcoticsense.reports import make_markdown_report
     from narcoticsense.spectroscopy import (
@@ -36,9 +42,7 @@ try:
         spectra_to_long_dataframe,
     )
     from narcoticsense.validation import (
-        binary_roc_pr_tables,
         dataset_quality_report,
-        reliability_table,
     )
     from narcoticsense.visualization import plot_overlay, plot_peaks, plot_projection, plot_spectrum
 except Exception as exc:
@@ -117,7 +121,7 @@ tabs = st.tabs(
         "4 Peak Analysis",
         "5 Chemometrics",
         "6 Library Match",
-        "7 Supervised ML",
+        "7 AI Model Engine",
         "8 Report",
         "Chemist Guide",
     ]
@@ -609,9 +613,9 @@ with tabs[5]:
         )
 
 with tabs[6]:
-    st.subheader("Supervised ML and dataset planning")
+    st.subheader("AI Model Engine")
     st.info(
-        "This tab tells you exactly what to collect before supervised AI is scientifically meaningful."
+        "This v0.5.0 engine trains transparent classical ML models from your uploaded spectra and metadata. It is for research screening and method development only."
     )
     n_classes = st.number_input(
         "How many chemical classes/conditions?", min_value=2, max_value=100, value=5
@@ -631,65 +635,126 @@ Recommended order:
 
 Start with PCA/PLS/random forest/SVM. Use CNNs or transformers only after the dataset is large and independently validated.
 """)
+
     if len(st.session_state.processed) >= 4 and not st.session_state.metadata.empty:
-        st.markdown("### Cross-validated supervised baseline")
-        label_col = st.selectbox(
-            "Label column",
-            [c for c in st.session_state.metadata.columns if c != "sample_id"],
-            index=0,
-        )
-        model_name = st.selectbox("Baseline model", ["Random Forest", "SVM RBF"])
-        n_points_ml = st.slider("ML grid points", 100, 2000, 500, step=100, key="ml_grid")
+        st.markdown("### Train a model")
+        task = st.radio("Task", ["Classification", "Regression"], horizontal=True)
+        n_points_ml = st.slider("ML grid points", 100, 2000, 500, step=100, key="ai_ml_grid")
+        test_size = st.slider("Test set fraction", 0.10, 0.50, 0.25, step=0.05)
         aligned_ml = align_spectra(st.session_state.processed, n_points=n_points_ml)
-        joined = pd.DataFrame({"sample_id": aligned_ml.sample_ids}).merge(
-            st.session_state.metadata[["sample_id", label_col]], on="sample_id", how="left"
-        )
-        keep = joined[label_col].notna() & (joined[label_col].astype(str).str.len() > 0)
-        if keep.sum() < 4 or joined.loc[keep, label_col].nunique() < 2:
-            st.warning("Need at least two classes and enough labeled spectra for cross-validation.")
-        else:
-            try:
-                result = evaluate_classifier(
-                    aligned_ml.matrix[keep.to_numpy()],
-                    joined.loc[keep, label_col].astype(str).tolist(),
-                    joined.loc[keep, "sample_id"].astype(str).tolist(),
-                    model_name=model_name,
+
+        if task == "Classification":
+            candidate_cols = [c for c in st.session_state.metadata.columns if c != "sample_id"]
+            label_col = st.selectbox("Class label column", candidate_cols, index=0)
+            model_name = st.selectbox("Classifier", available_classification_models())
+            joined = pd.DataFrame({"sample_id": aligned_ml.sample_ids}).merge(
+                st.session_state.metadata[["sample_id", label_col]], on="sample_id", how="left"
+            )
+            keep = joined[label_col].notna() & (joined[label_col].astype(str).str.len() > 0)
+            if keep.sum() < 4 or joined.loc[keep, label_col].nunique() < 2:
+                st.warning(
+                    "Need at least two classes and enough labeled spectra for supervised learning."
                 )
-                st.dataframe(result.metrics, use_container_width=True)
+            elif st.button("Train classification model"):
+                try:
+                    result = train_classification_model(
+                        aligned_ml.matrix[keep.to_numpy()],
+                        joined.loc[keep, label_col].astype(str).tolist(),
+                        joined.loc[keep, "sample_id"].astype(str).tolist(),
+                        model_name=model_name,
+                        test_size=float(test_size),
+                    )
+                    st.session_state["last_model_result"] = result
+                    st.success(f"Trained {model_name} classification model.")
+                except Exception as exc:
+                    st.error(f"Model training failed: {exc}")
+        else:
+            numeric_cols = []
+            for c in st.session_state.metadata.columns:
+                if c == "sample_id":
+                    continue
+                values = pd.to_numeric(st.session_state.metadata[c], errors="coerce")
+                if values.notna().sum() >= 4:
+                    numeric_cols.append(c)
+            if not numeric_cols:
+                st.warning(
+                    "Need a numeric metadata column such as concentration with at least four values."
+                )
+            else:
+                target_col = st.selectbox("Numeric target column", numeric_cols)
+                model_name = st.selectbox("Regressor", available_regression_models())
+                n_comp = st.slider("PLS components", 1, 10, 2)
+                joined = pd.DataFrame({"sample_id": aligned_ml.sample_ids}).merge(
+                    st.session_state.metadata[["sample_id", target_col]], on="sample_id", how="left"
+                )
+                y_numeric = pd.to_numeric(joined[target_col], errors="coerce")
+                keep = y_numeric.notna().to_numpy()
+                if keep.sum() < 4:
+                    st.warning("Need at least four numeric target values.")
+                elif st.button("Train regression model"):
+                    try:
+                        result = train_regression_model(
+                            aligned_ml.matrix[keep],
+                            y_numeric.loc[keep].astype(float).tolist(),
+                            joined.loc[keep, "sample_id"].astype(str).tolist(),
+                            model_name=model_name,
+                            test_size=float(test_size),
+                            n_components=int(n_comp),
+                        )
+                        st.session_state["last_model_result"] = result
+                        st.success(f"Trained {model_name} regression model.")
+                    except Exception as exc:
+                        st.error(f"Model training failed: {exc}")
+
+        result = st.session_state.get("last_model_result")
+        if result is not None:
+            st.markdown("### Latest model result")
+            st.dataframe(result.metrics, use_container_width=True)
+            st.markdown("Predictions")
+            st.dataframe(result.predictions, use_container_width=True)
+            if result.confusion is not None:
                 st.markdown("Confusion matrix")
                 st.dataframe(result.confusion, use_container_width=True)
+            if result.report is not None:
                 st.markdown("Classification report")
                 st.dataframe(result.report, use_container_width=True)
-                st.markdown("Predictions")
-                st.dataframe(result.predictions, use_container_width=True)
-                if result.probabilities is not None:
-                    classes = sorted(joined.loc[keep, label_col].astype(str).unique().tolist())
-                    prob_values = result.probabilities[[f"prob_{c}" for c in classes]].to_numpy()
-                    reliability = reliability_table(
-                        joined.loc[keep, label_col].astype(str).tolist(), prob_values, classes
-                    )
-                    st.markdown("Reliability / calibration table")
-                    st.dataframe(reliability, use_container_width=True)
-                    curves = binary_roc_pr_tables(
-                        joined.loc[keep, label_col].astype(str).tolist(), prob_values, classes
-                    )
-                    if curves:
-                        curve_name = st.selectbox("Validation curve", list(curves.keys()))
-                        st.dataframe(curves[curve_name], use_container_width=True)
-                    st.download_button(
-                        "Download class probabilities",
-                        result.probabilities.to_csv(index=False),
-                        file_name="ml_probabilities.csv",
-                        mime="text/csv",
-                    )
-                st.download_button(
-                    "Download ML predictions",
-                    result.predictions.to_csv(index=False),
-                    file_name="ml_predictions.csv",
-                    mime="text/csv",
+            if result.probabilities is not None:
+                st.markdown("Class probabilities")
+                st.dataframe(result.probabilities, use_container_width=True)
+            if result.feature_importance is not None:
+                st.markdown("Feature importance")
+                st.dataframe(result.feature_importance.head(30), use_container_width=True)
+            st.download_button(
+                "Download model metrics CSV",
+                result.metrics.to_csv(index=False),
+                file_name="model_metrics.csv",
+                mime="text/csv",
+            )
+            st.download_button(
+                "Download model predictions CSV",
+                result.predictions.to_csv(index=False),
+                file_name="model_predictions.csv",
+                mime="text/csv",
+            )
+            model_path = (
+                PROJECT_ROOT
+                / "models"
+                / f"narcoticsense_{result.task}_{result.model_name.lower().replace(' ', '_')}.joblib"
+            )
+            if st.button("Save trained model to models/ folder"):
+                saved = save_model_bundle(
+                    result,
+                    model_path,
+                    metadata={
+                        "project_name": project_name,
+                        "n_points": n_points_ml,
+                        "modality": modality,
+                        "responsible_use": "Research and decision-support only.",
+                    },
                 )
-            except Exception as exc:
-                st.info(f"Supervised baseline skipped: {exc}")
+                st.success(f"Saved model bundle: {saved}")
+    else:
+        st.info("Import at least four spectra and upload metadata to train supervised models.")
 
 with tabs[7]:
     st.subheader("Research report")

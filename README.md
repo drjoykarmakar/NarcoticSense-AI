@@ -40,7 +40,7 @@ python3 -m pytest
 
 
 
-New in v0.4.0:
+New in v0.5.0:
 
 - Expanded chemometrics: PLS regression, LDA, SIMCA-style one-class PCA, HCA, and UMAP/PCA manifold mapping.
 - Validation tables for supervised ML: class probabilities, reliability/calibration, ROC, and precision-recall exports.

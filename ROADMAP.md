@@ -29,7 +29,7 @@
 - Cross-validation workflows.
 - Calibration plots and residual analysis.
 
-## v0.4.0: AI and Uncertainty
+## v0.5.0: AI and Uncertainty
 
 - Random Forest, SVM, XGBoost, LightGBM.
 - Train/test splitting and validation reports.

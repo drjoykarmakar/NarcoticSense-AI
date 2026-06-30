@@ -120,6 +120,32 @@ python3 -m black --check src tests app
 python3 -m pytest -q
 ```
 
+## Author
+
+**Dr. Joy Karmakar**
+
+Founder and Principal Developer, **NarcoticSense AI**
+
+Founder, **DyeMind**
+
+🌐 https://www.dyemind.com
+
+ORCID:
+https://orcid.org/0000-0002-8232-5639
+
+GitHub:
+https://github.com/drjoykarmakar
+
+Research Interests
+
+- AI-assisted spectroscopy
+- Fluorescence spectroscopy
+- Raman spectroscopy
+- Chemometrics
+- Analytical chemistry
+- Molecular sensing
+- Intelligent sensor development
+
 ## License
 
 Code is licensed under the Apache License 2.0. See [`LICENSE`](LICENSE), [`NOTICE`](NOTICE), and [`DATA_LICENSE.md`](DATA_LICENSE.md).

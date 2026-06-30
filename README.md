@@ -6,6 +6,32 @@ NarcoticSense AI is a chemist-friendly platform for importing, visualizing, prep
 
 > Responsible use: this software is for research, screening, visualization, and decision support only. High-stakes findings must be confirmed using validated laboratory methods.
 
+## Author
+
+**Dr. Joy Karmakar**
+
+Founder and Principal Developer, **NarcoticSense AI**
+
+Founder, **DyeMind**
+
+🌐 https://www.dyemind.com
+
+ORCID:
+https://orcid.org/0000-0002-8232-5639
+
+GitHub:
+https://github.com/drjoykarmakar
+
+Research Interests
+
+- AI-assisted spectroscopy
+- Fluorescence spectroscopy
+- Raman spectroscopy
+- Chemometrics
+- Analytical chemistry
+- Molecular sensing
+- Intelligent sensor development
+
 ## Quick start on Mac
 
 1. Download or clone the repository.
